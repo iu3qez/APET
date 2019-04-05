@@ -14,7 +14,8 @@ Once you have two csv files, the Jupyter Notebook will process them in steps and
 - Whatever you come up with :)
 
 Of course you should live in a radio quiet area to obtain decent results.
-![alt text]( "Antenna pattern example")
+
+![alt text](https://github.com/mcogoni/APET/blob/master/pattern.png "Antenna pattern example")
 
 Try not to mix long and short propagation since it comes from different vertical angles and you would end up obtaining a horizontal pattern assiciated to several vertical angles... this seems unavoidable without special hardware.
 
@@ -24,8 +25,8 @@ There are two pairs of example files:
 
 Be careful to initially characterize the two rx chains by feeding them the same antenna (i.e. via a hybrid splitter) and check on the WSPR website their relative SNR values on the same spots: take the average value and put the number in the code parameter "rx_offset".
 
-## If you like this software and find it useful you can contribute by sending me a donation to keep me working on it!
-https://www.paypal.me/MarcoCogoni
-
 73,
 marco / IS0KYB
+
+## If you like this software and find it useful you can contribute by sending me a donation to keep me working on it!
+https://www.paypal.me/MarcoCogoni
