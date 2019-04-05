@@ -23,8 +23,8 @@ There are two pairs of example files:
 
 Be careful to initially characterize the two rx chains by feeding them the same antenna (i.e. via a hybrid splitter) and check on the WSPR website their relative SNR values on the same spots: take the average value and put the number in the code parameter "rx_offset".
 
-# If you like this software and find it useful you can contribute by sending me a donation to keep me working on it!
-# https://www.paypal.me/MarcoCogoni
+## If you like this software and find it useful you can contribute by sending me a donation to keep me working on it!
+https://www.paypal.me/MarcoCogoni
 
 73,
 marco / IS0KYB
