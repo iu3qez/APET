@@ -5,7 +5,8 @@ _A small tool to compute antenna radiation patterns with WSPR_
 The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards) and to collect statistics on the received stations over a few hours (it depends on the propagation...).
 Data will be collected from the WSPR webpage:
 http://wsprnet.org/olddb?mode=html&band=all&limit=2000&findcall=&findreporter=is0kyb&sort=date
-This call will be automated in the code in the future.
+
+this step will be integrated within the code in a future release.
 
 Once you have two csv files, the Jupyter Notebook will process them in steps and the result will be:
 - Angle / distance distribution of the spots;
