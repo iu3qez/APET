@@ -19,6 +19,11 @@ As told above, try not to mix long and short propagation since it comes from dif
 
 Be careful to initially characterize the two rx chains by feeding them the same antenna (i.e. via a hybrid splitter) and check on the WSPR website their relative SNR values on the same spots: take the average value and put the number in the code parameter "rx_offset".
 
+If you're unfamiliar with Jupyter Notebook, you can easily run the code on Google Colab:
+https://colab.research.google.com/github/mcogoni/APET/blob/master/WSPR_Antenna_Pattern.ipynb
+and run the commands in the first cell to clone the Github code in Google Drive.
+To use the notebook in read/write mode, you should save it and it will belong to you.
+
 73,
 marco / IS0KYB
 
