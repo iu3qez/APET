@@ -14,6 +14,7 @@ The Jupyter Notebook will process the data in steps and the result will be (you 
 Of course you should live in a radio quiet area to obtain decent results. In particular, if you have some known local noise coming from a specific direction, the antennas should be in the same spot.
 
 ![alt text](https://github.com/mcogoni/APET/blob/master/pattern.png "Antenna pattern example")
+This example pattern was obtained after ~7 hours and by exploiting the known antenna N-S symmetry, since there are very few stations active from South (Africa).
 
 As told above, try not to mix long and short propagation since it comes from different vertical angles and you would end up obtaining a horizontal pattern assiciated to several vertical angles... this seems unavoidable without special hardware.
 
