@@ -126,6 +126,50 @@ def get_unixtime(date_string):
     return unixtime
 
 
+def plot_avg_snr(data_bycallsign_dict, timestamp_start, timestamp_stop, reporter_list):
+    ax = plt.figure(figsize=(20,10))
+    
+    for i, reporter in enumerate(reporter_list):
+        snr_list_ = []
+        for call in data_bycallsign_dict:
+            timeseries = data_bycallsign_dict[call][reporter]
+            timeseries = sorted(timeseries, key=lambda k: timeseries[0], reverse=True)
+            unixtime_list = [get_unixtime(el[0]) for el in timeseries]
+            
+            snr_list = [el[2] for el in timeseries]
+            datetime_list = [datetime.datetime.fromtimestamp(ts) for ts in unixtime_list]
+            snr_list_.append( (unixtime_list, snr_list) )
+        
+        avg_snr_dict = defaultdict(list)
+        for data in snr_list_:
+            ts_list = data[0]
+            snr_list__ = data[1]
+            for ts, snr in zip(ts_list, snr_list__):
+                avg_snr_dict[ts].append(snr)
+        x_list = []
+        y_list = []
+        for ts in avg_snr_dict:
+            x_list.append(ts)
+            y_list.append(np.mean(avg_snr_dict[ts]))
+
+            #plt.errorbar(datetime.datetime.fromtimestamp(ts), np.mean(avg_snr_dict[ts]),yerr=np.std(avg_snr_dict[ts]), c=["r", "k"][i])
+            plt.scatter(datetime.datetime.fromtimestamp(ts), np.mean(avg_snr_dict[ts]), c=["r", "k"][i])
+
+        (m, b) = np.polyfit(x_list, y_list, 1)
+        yp = np.polyval([m, b], x_list)
+        plt.plot([datetime.datetime.fromtimestamp(x) for x in x_list], yp, c=["r", "k"][i], 
+            label="Linear fit of SNR trend for %s: %f dB/h"%(reporter, m*3600))
+
+    plt.grid()
+    plt.title("Time evolution of SNR for two antennas (AVG)")
+    plt.xlabel("Time")
+    plt.ylabel("SNR (dB)")
+    plt.xlim(datetime.datetime.fromtimestamp(timestamp_start), datetime.datetime.fromtimestamp(timestamp_stop))
+    plt.legend()
+
+
+
+
 def get_snr_bycall(callsign_sorted_byspots, data_bycallsign_dict, 
   timestamp_start, timestamp_stop, antenna_rotation_time, topn=-1, plot_flag=False):
     if plot_flag:
@@ -138,19 +182,21 @@ def get_snr_bycall(callsign_sorted_byspots, data_bycallsign_dict,
             timeseries = sorted(timeseries, key=lambda k: timeseries[0], reverse=True)
             unixtime_list = [get_unixtime(el[0]) for el in timeseries]
             snr_list = [el[2] for el in timeseries]
+            datetime_list = [datetime.datetime.fromtimestamp(ts) for ts in unixtime_list]
             snr_dict[call][reporter] = (unixtime_list, snr_list)
             if plot_flag:
-                plt.plot(unixtime_list, snr_list, "-o", label=call+" "+reporter, alpha=0.6, c=["r", "k"][i])
+                plt.plot(datetime_list, snr_list, "-o", label=call+" "+reporter, alpha=0.6, c=["r", "k"][i])
                 #text(unixtime_list[0], snr_list[0], "%s"%call)
 
     #legend()
     if plot_flag:
-        plt.axvline(timestamp_start, c="r")
-        plt.axvline(antenna_rotation_time, c="b")
+        #plt.axvline(timestamp_start, c="r")
+        #plt.axvline(antenna_rotation_time, c="b")
         plt.grid()
         plt.title("Time evolution of SNR for two antennas")
-        plt.xlabel("Time (UNIXTIME)")
+        plt.xlabel("Time")
         plt.ylabel("SNR (dB)")
+        plt.xlim(datetime.datetime.fromtimestamp(timestamp_start), datetime.datetime.fromtimestamp(timestamp_stop))
 
     return snr_dict
 
@@ -180,14 +226,14 @@ def get_deltasnr_bycall(callsign_sorted_byspots, data_bycallsign_dict,
                 if len(unixtime_list)>1:
                     plt.text(datetime_list[-1], deltasnr_list[-1]+0.5*random.random(), "%s"%call)
             else:
-                plt.text(datetime_list[0], deltasnr_list[0], Station(call).country)
+                plt.text(datetime_list[0], deltasnr_list[0]+0.5*random.random(), Station(call).country)
 
     if plot_flag:
         #plt.axvline(timestamp_start, c="r")
         #plt.axvline(antenna_rotation_time, c="b")
         plt.grid()
         plt.title("Time evolution of difference in SNR between two antennas")
-        plt.xlabel("Time (UNIXTIME)")
+        plt.xlabel("Time")
         plt.ylabel("Delta SNR (dB)")
         plt.xlim(datetime.datetime.fromtimestamp(timestamp_start), datetime.datetime.fromtimestamp(timestamp_stop))
         #plt.gcf().fmt_xdata = mdates.DateFormatter('%H-%M')
