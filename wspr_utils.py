@@ -19,9 +19,7 @@ def strip_data(data):
 
 def running_mean(x, N):
     x = np.array(x)
-    print (x.shape)
     x = np.concatenate((x, x[0:N-1]), axis=0)
-    print (x.shape)
     cumsum = np.cumsum(np.insert(x, 0, 0)) 
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
@@ -159,6 +157,8 @@ def plot_avg_snr(data_bycallsign_dict, timestamp_start, timestamp_stop, reporter
         yp = np.polyval([m, b], x_list)
         plt.plot([datetime.datetime.fromtimestamp(x) for x in x_list], yp, c=["r", "k"][i], 
             label="Linear fit of SNR trend for %s: %f dB/h"%(reporter, m*3600))
+        #plt.plot([datetime.datetime.fromtimestamp(x) for x in x_list], running_mean(y_list, 10), c=["r", "k"][i], 
+        #    label="SNR running AVG for %s"%(reporter), linestyle='dashed')
 
     plt.grid()
     plt.title("Time evolution of SNR for two antennas (AVG)")
@@ -236,6 +236,7 @@ def get_deltasnr_bycall(callsign_sorted_byspots, data_bycallsign_dict,
         plt.xlabel("Time")
         plt.ylabel("Delta SNR (dB)")
         plt.xlim(datetime.datetime.fromtimestamp(timestamp_start), datetime.datetime.fromtimestamp(timestamp_stop))
+        plt.ylim(-25, 25)
         #plt.gcf().fmt_xdata = mdates.DateFormatter('%H-%M')
         #plt.gcf().autofmt_xdate()
         #legend()
