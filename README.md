@@ -25,6 +25,14 @@ https://colab.research.google.com/github/mcogoni/APET/blob/master/WSPR_Antenna_P
 and run the commands in the first cell to clone the Github code in Google Drive.
 To use the notebook in read/write mode, you should save it and it will belong to you.
 
+Another use of the same data is to plot the SNR difference between the antennas over time
+to directly verify how propagation evolves, which distances are open, etc
+![alt text](https://github.com/mcogoni/APET/blob/master/DeltaSNR_time.png "DeltaSNR over time")
+
+As you can see above, from 8:00 UTC to 22:00 UTC, the highest gain of the directional antenna is
+over 10dB in the morning, but it degrades over time, until North Europe vanishes ~2 hours after sunset.
+Then only USA remains and the difference between the antennas grows constantly especially for 9000km paths. 
+
 73,
 marco / IS0KYB
 
