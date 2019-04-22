@@ -201,7 +201,7 @@ def get_snr_bycall(callsign_sorted_byspots, data_bycallsign_dict,
     return snr_dict
 
 
-def get_deltasnr_bycall(callsign_sorted_byspots, data_bycallsign_dict, 
+def get_deltasnr_bycall(callsign_sorted_byspots, data_bycallsign_dict, dist_dict,
   timestamp_start, timestamp_stop, antenna_rotation_time, reporter_list, common_ts_bycall, rx_offset, topn=-1, plot_flag=False, country=False):
     if plot_flag:
         ax = plt.figure(figsize=(26,20))
@@ -220,7 +220,8 @@ def get_deltasnr_bycall(callsign_sorted_byspots, data_bycallsign_dict,
 
         deltasnr_bycall_dict[call] = (unixtime_list, deltasnr_list)
         if plot_flag:
-            plt.plot(datetime_list, deltasnr_list, "-o", label=call+" "+reporter_list[0])
+            cdist = dist_dict[call]
+            plt.plot(datetime_list, deltasnr_list, "-o", label=call+" "+reporter_list[0], c=cdist, cmap=plt.cm.plasma)
             if not country:
                 plt.text(datetime_list[0], deltasnr_list[0]+0.5*random.random(), "%s"%call)
                 if len(unixtime_list)>1:
