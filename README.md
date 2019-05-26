@@ -7,7 +7,13 @@ A longer presentation of this project may be found at: https://docs.google.com/d
 The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards, or SDRs) and to collect statistics on the received stations over a few hours (it depends on the propagation...). Avoid very long sessions because the F2 layer changes height, so the incoming vertical angles will change, A LOT.
 Data is automatically collected from the WSPR db:
 http://wsprnet.org/olddb?mode=html&band=all&limit=2000&findcall=&findreporter=is0kyb&sort=date
-Data for FT8 should be produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
+
+NEW: Data for FT8 should be produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
+
+WSJT-X doesn't produce useful results: SNR is computed in a silly way that depends even on the window size in pixels (Yes, I wrote Joe Taylor and he told me: "If you don't like how I do the SNR computation, program it yourself! It's quite easy!")
+Of course WSJT-X code is a total mess with very few comments, a FORTRAN/C mix and variables with names like "x" or "i" spread all over... Robert code is, on the opposite, exemplar for clarity (given the difficult task anyway) and he wrote a FT8 decoder for dummies that really can help you understand how these communication protocols work: https://github.com/rtmrtmrtmrtm/basicft8
+
+
 My forked version implements a different SNR computation allowing much more precise data.
 In this case, you should have two weakmon instances running on the same PC or two different PCs. FT8 decoding is very computationally heavy, so don't use slow computers.
 The advantage of FT8 is that you have so many more signals to acquire from so many different directions and people usually use quite higher power (sic!) than WSPR. So, in general, recording times may be much shorter.
