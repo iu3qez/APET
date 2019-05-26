@@ -1,12 +1,16 @@
 # APET: Antenna Pattern Extraction Tool
 
-_A small tool to compute antenna radiation patterns with WSPR_
+_A small tool to compute antenna radiation patterns with WSPR or FT8_
 
 A longer presentation of this project may be found at: https://docs.google.com/document/d/1xli5nsfunJtP1ATBcLF-FFQXslA9Ovz93nYWgzLMxd0/edit?usp=sharing
 
 The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards, or SDRs) and to collect statistics on the received stations over a few hours (it depends on the propagation...). Avoid very long sessions because the F2 layer changes height, so the incoming vertical angles will change, A LOT.
 Data is automatically collected from the WSPR db:
 http://wsprnet.org/olddb?mode=html&band=all&limit=2000&findcall=&findreporter=is0kyb&sort=date
+Data for FT8 should be produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
+My forked version implements a different SNR computation allowing much more precise data.
+In this case, you should have two weakmon instances running on the same PC or two different PCs. FT8 decoding is very computationally heavy, so don't use slow computers.
+The advantage of FT8 is that you have so many more signals to acquire from so many different directions and people usually use quite higher power (sic!) than WSPR. So, in general, recording times may be much shorter.
 
 The Jupyter Notebook will process the data in steps and the result will be (you can do anything you like here...):
 - Angle / distance distribution of the spots;
