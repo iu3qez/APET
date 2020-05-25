@@ -7,10 +7,9 @@ A longer presentation of this project may be found at: https://docs.google.com/d
 The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards, or SDRs) and to collect statistics on the received stations over a defined time span (it depends on propagation and on the intended measurement purpose). Try to avoid very long sessions because the reflecting layers changes height, so the incoming vertical angles will change, a lot. So, if your recordings are too long, your results will be difficult to read because they're the average over several kinds of propagation type.
 
 Data may be collected in two main ways:
-. Automatically collected from the WSPR db:
+- Automatically collected from the WSPR db:
 http://wsprnet.org/olddb?mode=html&band=all&limit=2000&findcall=&findreporter=is0kyb&sort=date
-
-. FT8 reports produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
+- FT8 reports produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
 
 Note: WSJT-X doesn't produce useful results: SNR is computed in a non-consistent way that depends even on the window size in pixels. Modifying WSJT-x source code is really more complicated than it should and I ended up adapting Robert' code, which is, on the opposite, exemplar for clarity (given the difficult task anyway) and he wrote a FT8 decoder for dummies that really can help you understand how these communication protocols work: https://github.com/rtmrtmrtmrtm/basicft8
 
