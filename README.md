@@ -4,32 +4,33 @@ _A small tool to compute antenna radiation patterns with WSPR or FT8_
 
 A longer presentation of this project may be found at: https://docs.google.com/document/d/1xli5nsfunJtP1ATBcLF-FFQXslA9Ovz93nYWgzLMxd0/edit?usp=sharing
 
-The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards, or SDRs) and to collect statistics on the received stations over a few hours (it depends on the propagation...). Avoid very long sessions because the F2 layer changes height, so the incoming vertical angles will change, A LOT.
-Data is automatically collected from the WSPR db:
+The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards, or SDRs) and to collect statistics on the received stations over a defined time span (it depends on propagation and on the intended measurement purpose). Try to avoid very long sessions because the reflecting layers changes height, so the incoming vertical angles will change, a lot. So, if your recordings are too long, your results will be difficult to read because they're the average over several kinds of propagation type.
+
+Data may be collected in two main ways:
+. Automatically collected from the WSPR db:
 http://wsprnet.org/olddb?mode=html&band=all&limit=2000&findcall=&findreporter=is0kyb&sort=date
 
-NEW: Data for FT8 should be produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
+. FT8 reports produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
 
-WSJT-X doesn't produce useful results: SNR is computed in a silly way that depends even on the window size in pixels (Yes, I wrote Joe Taylor and he told me: "If you don't like how I do the SNR computation, program it yourself! It's quite easy!")
-Of course WSJT-X code is a total mess with very few comments, a FORTRAN/C mix and variables with names like "x" or "i" spread all over... Robert code is, on the opposite, exemplar for clarity (given the difficult task anyway) and he wrote a FT8 decoder for dummies that really can help you understand how these communication protocols work: https://github.com/rtmrtmrtmrtm/basicft8
+Note: WSJT-X doesn't produce useful results: SNR is computed in a non-consistent way that depends even on the window size in pixels. Modifying WSJT-x source code is really more complicated than it should and I ended up adapting Robert' code, which is, on the opposite, exemplar for clarity (given the difficult task anyway) and he wrote a FT8 decoder for dummies that really can help you understand how these communication protocols work: https://github.com/rtmrtmrtmrtm/basicft8
 
 
 My forked version implements a different SNR computation allowing much more precise data.
 In this case, you should have two weakmon instances running on the same PC or two different PCs. FT8 decoding is very computationally heavy, so don't use slow computers.
-The advantage of FT8 is that you have so many more signals to acquire from so many different directions and people usually use quite higher power (sic!) than WSPR. So, in general, recording times may be much shorter.
+The advantage of FT8 is that you have so many more signals to acquire from so many different directions and people usually use quite higher power (sic!) than WSPR. So, in general, recording times may be much shorter to reach the same statistics.
 
 The Jupyter Notebook will process the data in steps and the result will be (you can do anything you like here...):
 - Angle / distance distribution of the spots;
 - SNR difference (between the two RXs) plot;
 - Approximate antenna pattern of unknown antenna if you have a omnidirectional antenna as reference;
 
-Of course you should live in a radio quiet area to obtain decent results. In particular, if you have some known local noise coming from a specific direction, the antennas should be in the same spot.
+Of course you should live in a radio quiet area to obtain "scientific" results. In particular, if you have some known local noise coming from a specific direction, the antennas should be in the same spot.
 
 ![alt text](https://github.com/mcogoni/APET/blob/master/pattern.png "Antenna pattern example")
 
 This example pattern was obtained after about 6 hours and by exploiting the known antenna symmetry, since there are very few stations active from the South (Africa).
 
-As told above, try not to mix long and short propagation since it comes from different vertical angles and you would end up obtaining a horizontal pattern assiciated to several vertical angles... this seems unavoidable without special hardware.
+As told above, try not to mix long and short propagation since it comes from different vertical angles and you would end up obtaining a horizontal pattern assiciated to several vertical angles... this seems unavoidable without special beam-forming antennas.
 
 Be careful to initially characterize the two rx chains by feeding them the same antenna (i.e. via a hybrid splitter) and check on the WSPR website their relative SNR values on the same spots: take the average value and put the number in the code parameter "rx_offset".
 
