@@ -30,8 +30,18 @@ Codice (`extract_ft8_data`): `snr = snr_weakmon + 10·log10(background_noise)`, 
 Ne risulta ΔS(per spot) − ΔN(mediana di sessione): l'idea è vicina alla separazione ΔS/ΔN
 adottata da reAPET, ma:
 
-- Regge solo se `snr_weakmon` è definito rispetto **allo stesso** `background_noise` del blocco
-  (allora la somma ricostruisce S esattamente). **Da verificare** nel fork di weakmon.
+- **Verificato nel fork weakmon** (`iu3qez/weakmon`, `ft8.py`, commit Cogoni 2019-05-07/11):
+  `snr_is0kyb` = 10·log10(media dei quadrati del tono più forte per simbolo / `noise_power`),
+  con `noise_power` = quello del blocco. Quindi `snr + 10·log10(noise)` ricostruisce
+  **esattamente** la potenza del segnale: il ΔS per spot non dipende dalla stima del rumore. La
+  soglia `rawsnr < 0.1` non scatta mai nei log in repo (0 spot ≤ −10 dB).
+- **Dove viene misurato il rumore** (`find_background`): `rfft(samples, 1920)` tronca il buffer
+  ai primi 1920 campioni a 6000 Hz, cioè **i primi 0,32 s del ciclo**, prima dell'inizio
+  nominale delle trasmissioni (0,5 s). Si prende il 10° percentile del modulo su 100–3000 Hz,
+  senza finestratura, con un solo snapshot per ciclo e senza media tra cicli. Il commento dice
+  "FFT magnitude for the whole signal": la misura nella pausa è quasi certamente involontaria.
+  L'idea di misurare il rumore nelle pause era quindi già applicata di fatto, ma senza i
+  presidi che servono (vedi sotto).
 - Il "background noise" non si comporta come rumore. Misurato sui log in repo (p5–p95 in dB
   relativi):
 
@@ -54,15 +64,23 @@ adottata da reAPET, ma:
     no: è un gradino di livello nella catena 2, probabilmente un intervento dell'operatore;
   - dopo le 12:50 le decodifiche vanno a zero e il "rumore" crolla: fine della sessione.
 
+  Con la misura già nella pausa, la correlazione positiva con le decodifiche indica una
+  **contaminazione della finestra 0–0,32 s**: stazioni con DT negativo, code del ciclo
+  precedente, orologio del PC non allineato (la posizione della finestra dipende dall'ora di
+  sistema). Un solo snapshot di 0,32 s è inoltre esposto ai disturbi impulsivi.
+
   Usato come N, falsa ΔN. Il gradino a metà sessione mostra che l'offset tra le catene può
   cambiare senza che nessuno se ne accorga: il motore di misura deve rilevarlo e spezzare la
   sessione.
 - ΔN non è mai riportato: per antenne da ricezione (bande basse) è la metà del risultato.
 
-**reAPET:** ΔS dal rapporto dei livelli di segnale (catene uguali), ΔN misurato nelle pause tra
-cicli FT8 con percentile basso, entrambi riportati separatamente.
+**reAPET:** ΔS dal rapporto dei livelli di segnale (catene uguali): il metodo di Cogoni è
+corretto e si può tenere. ΔN nelle pause tra cicli FT8, ma con i presidi che mancavano: orologio
+verificato (NTP), finestra al centro della pausa reale (~13,3–15,3 s), più frame con finestratura,
+percentile su tempo × frequenza, scarto dei cicli contaminati, media su più cicli e validazione
+con il test di zero. Entrambi riportati separatamente.
 
-### 3. Riferimento "quasi omnidirezionale" — Da verificare
+### 3. Riferimento "quasi omnidirezionale" — Non verificabile, superato
 
 Articolo: il loop LZ1AQ è "quasi omnidirectional on 14 MHz for elevation angles above 1-2
 degrees". Un loop singolo verticale ha diagramma azimutale a 8 con nulli profondi; omni solo se
@@ -70,6 +88,12 @@ in configurazione a loop incrociati con combinazione in quadratura. La configura
 dichiarata. Inoltre la Fig. 2 mostra che il loop smette di ricevere di notte: il riferimento ha una
 risposta in elevazione molto diversa dall'antenna in prova, quindi ΔS mescola azimut ed elevazione
 di entrambe.
+
+La configurazione non è ricostruibile (l'autore non risponde). Le misure IU3QEZA usano una
+verticale risonante: omnidirezionale in azimut nel modello, ma in un giardino urbano radiali,
+terreno, edifici vicini e correnti di modo comune sulla discesa la rendono meno omni del previsto.
+Ha inoltre polarizzazione verticale e un nullo allo zenit, quindi su tratte corte con angoli alti
+penalizza il riferimento. Infine capta più rumore locale, e questo pesa su ΔN.
 
 **reAPET:** il riferimento è parte della misura; il report lo dichiara, non lo assume neutro.
 
@@ -141,8 +165,8 @@ Con tolleranza ±7 s il numero di coppie non cambia (IU3QEZA: 1498 in entrambi i
 
 ## Da fare per chiudere i punti aperti
 
-1. Leggere il fork weakmon di Cogoni: come sono definiti `snr` e `Background noise` (punto 2).
-2. Configurazione del loop LZ1AQ usato come riferimento (punto 3).
+1. ~~Leggere il fork weakmon di Cogoni~~: fatto (punto 2).
+2. ~~Configurazione del loop LZ1AQ~~: non ricostruibile, punto superato (punto 3).
 3. ~~Capire l'escursione di 30 dB del rumore nei log IU3QEZA~~: dipende soprattutto dallo
    stimatore, che include i segnali (vedi punto 2). Il gradino di −12 dB su RX2 dopo le 11:40
    non è ricostruibile: nessuno ricorda l'intervento. Lezione: il software registra da sé il
