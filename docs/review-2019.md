@@ -1,6 +1,6 @@
 # Critical review of APET (2019)
 
-Review of the assumptions and claims in the original work by Marco Cogoni IS0KYB (`QEX_paper.pdf`, `WSPR_Antenna_Pattern.ipynb`, example FT8 logs), as the basis for reAPET. See `STRATEGY.md` for the choices that follow from it.
+Review of the assumptions and claims in the original work by Marco Cogoni IS0KYB (`oldAPET/QEX_paper.pdf`, `oldAPET/WSPR_Antenna_Pattern.ipynb`, the example FT8 logs in `oldAPET/`), as the basis for reAPET. See `STRATEGY.md` for the choices that follow from it.
 
 Status: **Refuted** (contradicted by data or by calculation), **To fix** (right in principle, wrong in execution), **To verify** (plausible but not demonstrated), **Confirmed**.
 

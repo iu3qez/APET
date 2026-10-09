@@ -17,9 +17,9 @@ Read before any non-trivial work:
 
 ## State of the code
 
-The repository currently holds only the 2019 code. The new Python package `reapet` is planned but not written yet.
+The repository currently holds only the 2019 code, in `oldAPET/`. The new Python package `reapet` is planned but not written yet.
 
-**Legacy code (repository root), do not modify:**
+**Legacy code (`oldAPET/`), do not modify:**
 - `WSPR_Antenna_Pattern.ipynb` is the real code: every function is defined in cell 1, and cell 2 loads the data (`mode = "FT8"` or `"WSPR"`; reporters, locator and time window are hard-coded in the cell).
 - `wspr_utils.py` is a diverging, unused copy of cell 1 (its import is commented out).
 - `coords_utils.py`: Maidenhead locator ↔ lat/lon and `haversine` (distance, azimuth). This is the reusable part.
@@ -27,7 +27,7 @@ The repository currently holds only the 2019 code. The new Python package `reape
 - `decoded_<REPORTER>.txt`: FT8 logs from the modified weakmon decoder. Each block starts with `------ TIME: <unix>, Background noise: <power> ------`, followed by 10-field lines: `P<pass> <band> <second> <Hz> <start> <DT> <snr> <msg...>`. The "background noise" contains signals too (see the review): do not use it as noise.
 - `LazyH-16m.csv`, `4cross_quads.csv`: 3D patterns exported from MMANA (`ZENITH,AZIMUTH,VERT,HORI,TOTAL`).
 
-The notebook does not run with the versions in `requirements.txt` (numpy 2: `np.linspace` with a float `num` in `regularize_data`; `%pylab` is deprecated), and it uses local time (`fromtimestamp`, `mktime`) although its comments say UTC. Cogoni's weakmon fork is not to be used as a base for anything.
+The notebook does not run with the versions in `oldAPET/requirements.txt` (numpy 2: `np.linspace` with a float `num` in `regularize_data`; `%pylab` is deprecated), and it uses local time (`fromtimestamp`, `mktime`) although its comments say UTC. Cogoni's weakmon fork is not to be used as a base for anything.
 
 ## Agreed technical direction (recorder)
 

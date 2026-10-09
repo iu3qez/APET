@@ -32,9 +32,9 @@ The decoder, the ΔS and ΔN computation and the report come later, built on the
 
 ## The original work
 
-reAPET restarts from **APET** (Antenna Pattern Extraction Tool) by Marco Cogoni IS0KYB, written in 2019 ([mcogoni/APET](https://github.com/mcogoni/APET)). The starting idea and the first implementation are his: two receive chains in parallel, first with WSPR and then with FT8, to derive an antenna's azimuth pattern against a reference and compare it with the NEC model. The draft of the article written for QEX and never published is in [`QEX_paper.pdf`](QEX_paper.pdf).
+reAPET restarts from **APET** (Antenna Pattern Extraction Tool) by Marco Cogoni IS0KYB, written in 2019 ([mcogoni/APET](https://github.com/mcogoni/APET)). The starting idea and the first implementation are his: two receive chains in parallel, first with WSPR and then with FT8, to derive an antenna's azimuth pattern against a reference and compare it with the NEC model. The draft of the article written for QEX and never published is in [`oldAPET/QEX_paper.pdf`](oldAPET/QEX_paper.pdf).
 
-The original code is kept as it was, at the repository root:
+The original code is kept as it was, in [`oldAPET/`](oldAPET/):
 
 - `WSPR_Antenna_Pattern.ipynb`: the notebook with all the processing;
 - `coords_utils.py`: Maidenhead conversion and distance/azimuth computation;
