@@ -1,5 +1,5 @@
 ---
-title: Registratore IQ a doppio tuner - Plan
+title: Registratore IQ a doppio ricevitore - Plan
 type: feat
 date: 2026-10-09
 topic: dual-tuner-iq-recorder
@@ -8,14 +8,14 @@ product_contract_source: ce-brainstorm
 execution: code
 ---
 
-# Registratore IQ a doppio tuner - Plan
+# Registratore IQ a doppio ricevitore - Plan
 
 ## Goal Capsule
 
 - **Objective:** al CQ WW DX CW del 2026-11-28 un OM registra un'ora di dati IQ da due antenne che si possono rianalizzare offline in modo affidabile, senza dover regolare nulla sul ricevitore.
-- **Means:** un registratore reAPET che pilota direttamente un SDR a due tuner su Linux e Windows.
+- **Means:** un registratore reAPET che pilota direttamente, tramite SoapySDR, un SDR con due ricevitori coerenti, su Linux e Windows.
 - **Product authority:** `STRATEGY.md` (track "Motore di misura con validazione") e questo Product Contract. L'analisi (decoder, ΔS, ΔN, rilevamento dei gradini di livello) non è in scope attivo.
-- **Open blockers:** modello esatto dell'SDR e supporto del doppio tuner con guadagno impostabile, su Linux e su Windows (vedi Outstanding Questions).
+- **Open blockers:** nessuno. Quali dispositivi superano il controllo di R14 si verifica in pianificazione (vedi Outstanding Questions).
 
 ---
 
@@ -23,7 +23,7 @@ execution: code
 
 ### Summary
 
-Un registratore che imposta e blocca guadagni uguali sui due tuner, con AGC spento. Registra l'IQ di entrambi con marche temporali per blocco, marca la saturazione mentre registra e salva dati e contesto come un'unica sessione. All'avvio chiede solo il nome delle due antenne e il locator. Di default registra una fetta stretta (sottobanda FT8 più una porzione quieta vicina); la registrazione larga è un'opzione.
+Un registratore che verifica che l'SDR collegato offra due ricevitori coerenti, poi imposta e blocca guadagni uguali su entrambi con AGC spento. Registra l'IQ di entrambi con marche temporali per blocco, marca la saturazione mentre registra e salva dati e contesto come un'unica sessione. All'avvio chiede solo il nome delle due antenne e il locator. Di default registra una fetta stretta (sottobanda FT8 più una porzione quieta vicina); la registrazione larga è un'opzione.
 
 ### Problem Frame
 
@@ -40,7 +40,9 @@ Il CQ WW del 2026-11-28 è un raduno con amici che portano antenne: serve a most
 
 - **Registrazione prima dell'analisi.** L'IQ grezzo permette di rifare l'analisi sugli stessi dati cambiando decoder o stimatore, e solo la registrazione è vincolata alla data del 2026-11-28. (session-settled: user-approved — chosen over analisi per prima o decodifica in tempo reale: senza dati grezzi una sessione non è rianalizzabile.) Governs R1, R13.
 - **IQ con marche temporali, non audio.** (session-settled: user-directed — chosen over registrazione audio: richiesta esplicita di IQ e marche temporali.) Governs R1, R5.
-- **SDR a due tuner con clock condiviso come hardware di riferimento.** Elimina lo sfasamento tra due interfacce USB indipendenti, che in 48 h a 50 ppm arriva a circa 8 s. (session-settled: user-directed — chosen over due QMX, due SDR separati o hardware misto.) Governs R1.
+- **SDR con due ricevitori sullo stesso clock.** Elimina lo sfasamento tra due interfacce indipendenti, che in 48 h a 50 ppm arriva a circa 8 s. (session-settled: user-directed — chosen over due QMX, due SDR separati o hardware misto.) Governs R1.
+- **Accesso all'hardware tramite SoapySDR.** Un'unica interfaccia per molti SDR su Linux e Windows, con AGC e guadagno controllabili. È universale nell'interfaccia ma non nelle capacità: per questo serve il controllo all'avvio. (session-settled: user-directed — chosen over il supporto di un singolo apparato o protocollo, come openHPSDR.) Governs R1, R12, R14.
+- **Dispositivi di riferimento per i test:** Orion MkII e TRX DUO (firmware openHPSDR, via ethernet) e RSPduo. L'RSPdx è escluso perché ha un solo tuner. Governs R14.
 - **Registratore reAPET che pilota l'SDR.** Guadagno e AGC non sono lasciati all'operatore, coerentemente con il confine "nessuna procedura a carico dell'operatore" di `STRATEGY.md`. (session-settled: user-approved — chosen over programma SDR esistente più diario reAPET: avrebbe lasciato guadagno e AGC all'operatore.) Governs R2, R3, R9.
 - **Fetta stretta di default, larga come opzione.** Sessioni piccole e archiviabili, mentre la registrazione larga resta disponibile per sperimentare (per esempio con i segnali CW del contest). (session-settled: user-approved — chosen over registrazione larga di default.) Governs R4.
 - **Due nomi e locator all'avvio.** (session-settled: user-approved — chosen over profilo salvato o annotazione a posteriori: un profilo invecchia senza che nessuno se ne accorga, e a distanza di tempo nessuno ricorda le antenne.) Governs R7.
@@ -53,21 +55,21 @@ Il CQ WW del 2026-11-28 è un raduno con amici che portano antenne: serve a most
 
 **Acquisizione**
 
-- R1. reAPET registra contemporaneamente l'IQ dei due tuner dello stesso SDR, sullo stesso clock di campionamento.
-- R2. Durante una sessione i due tuner hanno guadagno uguale, AGC spento e impostazioni bloccate, e nessuna regolazione è possibile fino alla chiusura della sessione.
+- R1. reAPET registra contemporaneamente l'IQ di due ricevitori dello stesso SDR, accessibile tramite SoapySDR, sullo stesso clock di campionamento.
+- R2. Durante una sessione i due ricevitori hanno guadagno uguale, AGC spento e impostazioni bloccate, e nessuna regolazione è possibile fino alla chiusura della sessione.
 - R3. Prima di registrare, reAPET esegue un breve controllo del margine e propone il guadagno da usare. All'operatore non viene chiesta nessuna regolazione.
-- R4. Di default la porzione registrata copre la sottobanda FT8 della banda scelta più una porzione quieta adiacente; come opzione si può registrare l'intera larghezza del tuner.
+- R4. Di default la porzione registrata copre la sottobanda FT8 della banda scelta più una porzione quieta adiacente; come opzione si può registrare la larghezza massima offerta dal dispositivo.
 
 **Tempo e contesto**
 
 - R5. Ogni blocco di campioni registrato porta la propria marca temporale.
 - R6. La sessione registra lo stato dell'orologio di sistema (sincronizzato o meno, e lo scarto se noto). La registrazione parte anche con l'orologio non sincronizzato.
-- R7. All'avvio reAPET chiede il nome dell'antenna su ciascun tuner e il locator. Se un dato manca la registrazione parte comunque, e il dato è marcato come mancante.
-- R8. Contesto e dati formano un'unica sessione, che contiene almeno: banda, frequenza centrale, frequenza di campionamento, guadagni, corrispondenza tuner–antenna, locator, versione di reAPET, inizio e fine.
+- R7. All'avvio reAPET chiede il nome dell'antenna su ciascun ricevitore e il locator. Se un dato manca la registrazione parte comunque, e il dato è marcato come mancante.
+- R8. Contesto e dati formano un'unica sessione, che contiene almeno: banda, frequenza centrale, frequenza di campionamento, guadagni, corrispondenza ricevitore–antenna, dispositivo e driver, locator, versione di reAPET, inizio e fine.
 
 **Integrità**
 
-- R9. Durante la registrazione reAPET rileva la saturazione o il blocco di ciascun tuner e la registra nella sessione come intervalli temporali.
+- R9. Durante la registrazione reAPET rileva, dai campioni IQ, la saturazione o il blocco di ciascun ricevitore e la registra nella sessione come intervalli temporali.
 - R10. Ogni interruzione (campioni persi, disconnessione, disco pieno, arresto) è registrata nella sessione: nessun buco nei dati resta non dichiarato.
 
 **Uso**
@@ -79,24 +81,29 @@ Il CQ WW del 2026-11-28 è un raduno con amici che portano antenne: serve a most
 
 - R13. Una sessione si apre offline su un'altra macchina e contiene tutto ciò che serve all'analisi: decodifica FT8, ΔS, ΔN dentro o fuori la sottobanda e, per la fase 2, la stima dell'angolo di arrivo (marche temporali, frequenze, locator).
 
+**Compatibilità hardware**
+
+- R14. All'avvio reAPET verifica che il dispositivo collegato offra due ricevitori sullo stesso clock, ricevuti simultaneamente, con AGC disattivabile e guadagno manuale. Se una di queste capacità manca, lo dichiara e non registra.
+
 ### Key Flows
 
 - F1. Sessione di registrazione
   - **Trigger:** l'operatore avvia una registrazione con l'SDR collegato alle due antenne.
-  - **Steps:** inserisce i due nomi e il locator (R7); reAPET controlla il margine e propone il guadagno (R3); i guadagni vengono bloccati (R2); parte la registrazione con lo stato visibile (R11); saturazioni e interruzioni vengono marcate mentre accadono (R9, R10); l'operatore ferma la registrazione.
+  - **Steps:** reAPET verifica il dispositivo (R14); l'operatore inserisce i due nomi e il locator (R7); reAPET controlla il margine e propone il guadagno (R3); i guadagni vengono bloccati (R2); parte la registrazione con lo stato visibile (R11); saturazioni e interruzioni vengono marcate mentre accadono (R9, R10); l'operatore ferma la registrazione.
   - **Outcome:** una sessione chiusa, dati più contesto, rianalizzabile offline (R8, R13).
-  - **Covered by:** R2, R3, R7, R8, R9, R10, R11, R13
+  - **Covered by:** R2, R3, R7, R8, R9, R10, R11, R13, R14
 
 ### Acceptance Examples
 
-- AE1. **Covers R9.** **Given** una registrazione in corso durante il contest, **when** una stazione vicina trasmette e satura il tuner 1 per 40 s, **then** la sessione contiene quell'intervallo marcato come saturazione sul tuner 1, e la registrazione prosegue.
+- AE1. **Covers R9.** **Given** una registrazione in corso durante il contest, **when** una stazione vicina trasmette e satura il ricevitore 1 per 40 s, **then** la sessione contiene quell'intervallo marcato come saturazione sul ricevitore 1, e la registrazione prosegue.
 - AE2. **Covers R7.** **Given** l'avvio di una sessione, **when** l'operatore non inserisce il locator, **then** la registrazione parte e la sessione riporta il locator come mancante.
-- AE3. **Covers R10.** **Given** una registrazione in corso, **when** l'SDR si disconnette per 5 s e poi torna, **then** la sessione dichiara l'interruzione con inizio e fine, senza buchi silenziosi.
+- AE3. **Covers R10.** **Given** una registrazione in corso, **when** il collegamento con l'SDR si interrompe per 5 s e poi torna, **then** la sessione dichiara l'interruzione con inizio e fine, senza buchi silenziosi.
 - AE4. **Covers R6.** **Given** un PC senza internet e con l'orologio non sincronizzato, **when** si avvia la registrazione, **then** la registrazione parte e la sessione registra che l'orologio non era sincronizzato.
+- AE5. **Covers R14.** **Given** un SDR con un solo ricevitore, oppure con due ricevitori senza campionamento simultaneo, **when** si avvia una sessione, **then** reAPET indica quale capacità manca e non registra.
 
 ### Success Criteria
 
-- Al CQ WW del 2026-11-28 si ottiene una sessione di circa un'ora, completa secondo R8–R10: IQ di entrambi i tuner, contesto, saturazioni e interruzioni dichiarate.
+- Al CQ WW del 2026-11-28 si ottiene una sessione di circa un'ora, completa secondo R8–R10: IQ di entrambi i ricevitori, contesto, saturazioni e interruzioni dichiarate.
 
 ### Scope Boundaries
 
@@ -118,18 +125,16 @@ Questo piano copre la registrazione, prima area del motore di misura. La suddivi
 
 ### Dependencies / Assumptions
 
-- Si assume che l'SDR a due tuner dell'autore sia pilotabile in doppio tuner con guadagno impostabile da software, su Linux e su Windows. Non è verificato.
+- SoapySDR e i driver dei dispositivi di riferimento devono essere installabili su Linux e su Windows.
+- Si assume che almeno uno dei dispositivi di riferimento superi R14 tramite SoapySDR. Non è verificato: per l'RSPduo è in corso una verifica, per Orion e TRX DUO dipende dalla maturità del driver openHPSDR.
+- Il TRX DUO ha un frontend minimale, senza preselezione: in presenza di trasmissioni vicine la saturazione è più probabile.
 - La protezione fisica dell'ingresso dell'SDR dalle trasmissioni vicine (limitatore, distanza tra le antenne) è un prerequisito di installazione a carico dell'utente, non una funzione del registratore.
 
 ### Outstanding Questions
 
-**Resolve Before Planning**
-
-- Modello esatto dell'SDR a due tuner che verrà usato al CQ WW.
-
 **Deferred to Planning**
 
-- Supporto in doppio tuner, con guadagno impostabile, su Linux e su Windows; comportamento se uno dei due sistemi non lo consente.
+- Quali dispositivi di riferimento superano R14 tramite SoapySDR (RSPduo in modalità doppio tuner; driver openHPSDR per Orion MkII e TRX DUO), su Linux e su Windows; quale usare al CQ WW.
 - Formato della sessione su disco e frequenza di campionamento di default della fetta stretta.
 - Criterio del controllo del margine (R3) e soglie di rilevamento della saturazione (R9).
 
