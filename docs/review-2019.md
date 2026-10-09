@@ -1,192 +1,116 @@
-# Review critica di APET (2019)
+# Critical review of APET (2019)
 
-Revisione delle assunzioni e affermazioni del lavoro originale di Marco Cogoni IS0KYB
-(`QEX_paper.pdf`, `WSPR_Antenna_Pattern.ipynb`, log FT8 di esempio), come base per reAPET.
-Vedi `STRATEGY.md` per le scelte che ne derivano.
+Review of the assumptions and claims in the original work by Marco Cogoni IS0KYB (`QEX_paper.pdf`, `WSPR_Antenna_Pattern.ipynb`, example FT8 logs), as the basis for reAPET. See `STRATEGY.md` for the choices that follow from it.
 
-Stato: **Smentita** (contraddetta da dati o calcolo), **Da correggere** (corretta nell'idea,
-sbagliata nell'esecuzione), **Da verificare** (plausibile ma non dimostrata), **Confermata**.
+Status: **Refuted** (contradicted by data or by calculation), **To fix** (right in principle, wrong in execution), **To verify** (plausible but not demonstrated), **Confirmed**.
 
-## Metodo
+## Method
 
-### 1. Media sulla polarizzazione — Smentita
+### 1. Averaging over polarization — Refuted
 
-Articolo: i 2 minuti di WSPR coprono "roughly one full polarization rotation", citando Epstein
-(1969): 0,25 giri/min di giorno, quasi zero di notte.
+Article: the 2 minutes of WSPR cover "roughly one full polarization rotation", citing Epstein (1969): 0.25 turns/min by day, almost zero at night.
 
-0,25 giri/min × 2 min = **0,5 giri**, non uno. Con FT8 (12,64 s) si arriva a ~0,05 giri: il
-singolo spot non media nulla. La media sulla polarizzazione esiste solo **tra spot diversi**,
-quindi dipende dal numero di spot per settore, non dalla durata del modo. Di notte, con rotazione
-quasi nulla, il confronto tra antenne a polarizzazione diversa (loop verticale vs Lazy H
-orizzontale) resta sistematicamente distorto.
+0.25 turns/min × 2 min = **0.5 turns**, not one. With FT8 (12.64 s) it comes to about 0.05 turns: a single spot averages nothing. Averaging over polarization happens only **across different spots**, so it depends on the number of spots per sector, not on the length of the mode. At night, with almost no rotation, comparing antennas of different polarization (vertical loop vs horizontal Lazy H) stays systematically biased.
 
-**reAPET:** l'affidabilità per settore deve derivare dal numero di spot indipendenti e dalla
-coerenza interna, non da un'ipotesi di media intra-spot.
+**reAPET:** reliability per sector must come from the number of independent spots and from internal consistency, not from an assumption of averaging within a spot.
 
-### 2. "SNR reale" del decoder modificato — Da correggere
+### 2. The modified decoder's "real SNR" — To fix
 
-Codice (`extract_ft8_data`): `snr = snr_weakmon + 10·log10(background_noise)`, poi in
-`get_deltasnr_bycall` si sottrae la mediana di sessione del rumore di ciascun RX.
-Ne risulta ΔS(per spot) − ΔN(mediana di sessione): l'idea è vicina alla separazione ΔS/ΔN
-adottata da reAPET, ma:
+Code (`extract_ft8_data`): `snr = snr_weakmon + 10·log10(background_noise)`, then `get_deltasnr_bycall` subtracts each receiver's session median noise. The result is ΔS (per spot) − ΔN (session median). The idea is close to the ΔS/ΔN separation adopted by reAPET, but:
 
-- **Verificato nel fork weakmon** (`iu3qez/weakmon`, `ft8.py`, commit Cogoni 2019-05-07/11):
-  `snr_is0kyb` = 10·log10(media dei quadrati del tono più forte per simbolo / `noise_power`),
-  con `noise_power` = quello del blocco. Quindi `snr + 10·log10(noise)` ricostruisce
-  **esattamente** la potenza del segnale: il ΔS per spot non dipende dalla stima del rumore. La
-  soglia `rawsnr < 0.1` non scatta mai nei log in repo (0 spot ≤ −10 dB).
-- **Dove viene misurato il rumore** (`find_background`): `rfft(samples, 1920)` tronca il buffer
-  ai primi 1920 campioni a 6000 Hz, cioè **i primi 0,32 s del ciclo**, prima dell'inizio
-  nominale delle trasmissioni (0,5 s). Si prende il 10° percentile del modulo su 100–3000 Hz,
-  senza finestratura, con un solo snapshot per ciclo e senza media tra cicli. Il commento dice
-  "FFT magnitude for the whole signal": la misura nella pausa è quasi certamente involontaria.
-  L'idea di misurare il rumore nelle pause era quindi già applicata di fatto, ma senza i
-  presidi che servono (vedi sotto).
-- Il "background noise" non si comporta come rumore. Misurato sui log in repo (p5–p95 in dB
-  relativi):
+- **Verified in the weakmon fork** (`iu3qez/weakmon`, `ft8.py`, Cogoni commits of 2019-05-07/11): `snr_is0kyb` = 10·log10(mean of the squares of the strongest tone per symbol / `noise_power`), with `noise_power` taken from the same block. So `snr + 10·log10(noise)` reconstructs the signal power **exactly**: the per-spot ΔS does not depend on the noise estimate. The `rawsnr < 0.1` floor never triggers in the logs in the repository (0 spots ≤ −10 dB).
+- **Where the noise is measured** (`find_background`): `rfft(samples, 1920)` truncates the buffer to its first 1920 samples at 6000 Hz, i.e. **the first 0.32 s of the cycle**, before the nominal start of transmissions (0.5 s). It takes the 10th percentile of the magnitude over 100–3000 Hz, with no windowing, a single snapshot per cycle and no averaging across cycles. The source comment says "FFT magnitude for the whole signal", so measuring in the pause was almost certainly accidental. Measuring noise in the pauses was therefore already done in practice, but without the safeguards it needs (see below).
+- The "background noise" does not behave like noise. Measured on the logs in the repository (p5–p95 in relative dB):
 
-  | Log | blocchi | p5 | mediana | p95 | escursione |
+  | Log | blocks | p5 | median | p95 | spread |
   |---|---|---|---|---|---|
-  | IS0KYB1 (Kiwi) | 1056 | 35,6 | 37,2 | 40,2 | 4,6 dB |
-  | IS0KYB2 | 529 | 42,3 | 46,1 | 52,7 | 10,4 dB |
-  | IU3QEZA1 | 438 | 25,1 | 46,4 | 60,5 | **35,4 dB** |
-  | IU3QEZA2 | 426 | 25,3 | 44,1 | 54,6 | **29,3 dB** |
+  | IS0KYB1 (Kiwi) | 1056 | 35.6 | 37.2 | 40.2 | 4.6 dB |
+  | IS0KYB2 | 529 | 42.3 | 46.1 | 52.7 | 10.4 dB |
+  | IU3QEZA1 | 438 | 25.1 | 46.4 | 60.5 | **35.4 dB** |
+  | IU3QEZA2 | 426 | 25.3 | 44.1 | 54.6 | **29.3 dB** |
 
-  Escursioni di 30 dB a distanza di decine di secondi non sono rumore esterno. Analisi della
-  sessione IU3QEZA (2025-01-03, 10:53–13:02 UTC, contesto urbano):
-  - correlazione per blocco tra "rumore" e numero di decodifiche: **+0,44 / +0,49**. La stima
-    cresce con l'attività in banda, quindi **contiene i segnali**;
-  - correlazione del "rumore" tra i due RX: +0,73, coerente con una causa comune (la banda);
-  - nessuna firma di TX locale (rumore alto con decodifiche crollate). Su RX1 ci sono picchi
-    sincroni con i cicli FT8 (:28/:58) con decodifiche normali: forse una stazione FT8 forte
-    e vicina;
-  - dopo una pausa di circa 20 minuti (11:30–11:40) su entrambi i RX, RX2 scende di ~12 dB e RX1
-    no: è un gradino di livello nella catena 2, probabilmente un intervento dell'operatore;
-  - dopo le 12:50 le decodifiche vanno a zero e il "rumore" crolla: fine della sessione.
+  Swings of 30 dB within tens of seconds are not external noise. Analysis of the IU3QEZA session (2025-01-03, 10:53–13:02 UTC, urban site):
+  - per-block correlation between "noise" and number of decodes: **+0.44 / +0.49**. The estimate grows with band activity, so it **contains signals**;
+  - correlation of the "noise" between the two receivers: +0.73, consistent with a common cause (the band);
+  - no signature of a local transmitter (high noise with collapsed decodes). On RX1 there are peaks synchronous with the FT8 cycles (:28/:58) with normal decodes: possibly a strong nearby FT8 station;
+  - after a pause of about 20 minutes (11:30–11:40) on both receivers, RX2 drops by ~12 dB and RX1 does not: a level step in chain 2, probably an operator action;
+  - after 12:50 the decodes drop to zero and the "noise" collapses: end of the session.
 
-  Con la misura già nella pausa, la correlazione positiva con le decodifiche indica una
-  **contaminazione della finestra 0–0,32 s**: stazioni con DT negativo, code del ciclo
-  precedente, orologio del PC non allineato (la posizione della finestra dipende dall'ora di
-  sistema). Un solo snapshot di 0,32 s è inoltre esposto ai disturbi impulsivi.
+  With the measurement already in the pause, the positive correlation with decodes points to **contamination of the 0–0.32 s window**: stations with negative DT, tails of the previous cycle, a misaligned PC clock (the window position depends on system time). A single 0.32 s snapshot is also exposed to impulsive noise.
 
-  Usato come N, falsa ΔN. Il gradino a metà sessione mostra che l'offset tra le catene può
-  cambiare senza che nessuno se ne accorga: il motore di misura deve rilevarlo e spezzare la
-  sessione.
-- ΔN non è mai riportato: per antenne da ricezione (bande basse) è la metà del risultato.
+  Used as N, it falsifies ΔN. The mid-session step shows that the offset between chains can change without anyone noticing: the measurement engine must detect it and split the session.
+- ΔN is never reported: for receiving antennas (low bands) it is half of the result.
 
-Contaminazione della pausa da stazioni fuori tempo, misurata dal DT degli spot decodificati
-(`dec.dt`, assunto riferito all'inizio nominale a 0,5 s): percentuale di spot la cui trasmissione
-si sovrappone alla finestra.
+Contamination of the pause by mistimed stations, measured from the DT of decoded spots (`dec.dt`, assumed relative to the nominal 0.5 s start): percentage of spots whose transmission overlaps the window.
 
-| Log | DT p5 / mediana / p95 | 0–0,32 s (Cogoni) | 13,3–15,3 s | 14,0–15,0 s |
+| Log | DT p5 / median / p95 | 0–0.32 s (Cogoni) | 13.3–15.3 s | 14.0–15.0 s |
 |---|---|---|---|---|
-| IS0KYB1 | −0,01 / +0,59 / +1,32 s | 5% | 96% | 15% |
-| IU3QEZA1 | −0,29 / +0,28 / +0,64 s | 6% | 91% | 6% |
-| IU3QEZA2 | −0,31 / +0,28 / +0,64 s | 6% | 92% | 6% |
+| IS0KYB1 | −0.01 / +0.59 / +1.32 s | 5% | 96% | 15% |
+| IU3QEZA1 | −0.29 / +0.28 / +0.64 s | 6% | 91% | 6% |
+| IU3QEZA2 | −0.31 / +0.28 / +0.64 s | 6% | 92% | 6% |
 
-La mediana del DT diversa da zero è un offset comune a tutte le stazioni, quindi va attribuita
-all'orologio o alla latenza audio del ricevitore: la pausa reale non è dove la colloca l'orologio
-del PC. I segnali sotto soglia, che il DT non può mostrare, formano in banda affollata un tappeto
-che arriva dalle direzioni dell'antenna: probabile causa principale della correlazione tra
-"rumore" e decodifiche, e ragione per cui ΔN dentro la sottobanda FT8 potrebbe non essere rumore
-ambientale. Da verificare con il test di zero e con una misura in una porzione quieta adiacente.
+A non-zero median DT is an offset shared by all stations, so it belongs to the receiver's clock or audio latency: the real pause is not where the PC clock puts it. Sub-threshold signals, which DT cannot reveal, form on a crowded band a carpet that arrives from the antenna's directions. This is the likely main cause of the correlation between "noise" and decodes, and the reason why ΔN inside the FT8 subband may not be ambient noise. To be checked with the zero test and with a measurement in an adjacent quiet slice.
 
-**reAPET:** ΔS dal rapporto dei livelli di segnale (catene uguali): il metodo di Cogoni è
-corretto e si può tenere. ΔN nelle pause tra cicli FT8, con i presidi che mancavano: finestra
-posizionata dai dati (distribuzione DT della sessione, scegliendo la finestra meno contaminata),
-più frame con finestratura, percentile su tempo × frequenza, media su più cicli e validazione
-con il test di zero. Il ciclo senza una finestra sufficientemente pulita non produce ΔN; se i
-cicli invalidati sono troppi, il report dichiara "ΔN non misurabile in questa sessione" invece di
-dare un numero. ΔS e ΔN sono riportati separatamente.
+**reAPET:** ΔS from the ratio of signal levels (matched chains): Cogoni's method is sound and can be kept. ΔN in the pauses between FT8 cycles, with the safeguards that were missing: a window placed from the data (the session's DT distribution, choosing the least contaminated window), several windowed frames, a percentile over time × frequency, averaging over several cycles and validation with the zero test. A cycle with no sufficiently clean window yields no ΔN; if too many cycles are invalidated, the report declares "ΔN not measurable in this session" instead of giving a number. ΔS and ΔN are reported separately.
 
-### 3. Riferimento "quasi omnidirezionale" — Non verificabile, superato
+### 3. "Quasi-omnidirectional" reference — Not verifiable, superseded
 
-Articolo: il loop LZ1AQ è "quasi omnidirectional on 14 MHz for elevation angles above 1-2
-degrees". Un loop singolo verticale ha diagramma azimutale a 8 con nulli profondi; omni solo se
-in configurazione a loop incrociati con combinazione in quadratura. La configurazione usata non è
-dichiarata. Inoltre la Fig. 2 mostra che il loop smette di ricevere di notte: il riferimento ha una
-risposta in elevazione molto diversa dall'antenna in prova, quindi ΔS mescola azimut ed elevazione
-di entrambe.
+Article: the LZ1AQ loop is "quasi omnidirectional on 14 MHz for elevation angles above 1-2 degrees". A single vertical loop has a figure-of-eight azimuth pattern with deep nulls; it is omnidirectional only as crossed loops combined in quadrature. The configuration used is not stated. Fig. 2 also shows the loop stops receiving at night: the reference has an elevation response very different from the antenna under test, so ΔS mixes the azimuth and elevation of both.
 
-La configurazione non è ricostruibile (l'autore non risponde). Le misure IU3QEZA usano una
-verticale risonante: omnidirezionale in azimut nel modello, ma in un giardino urbano radiali,
-terreno, edifici vicini e correnti di modo comune sulla discesa la rendono meno omni del previsto.
-Ha inoltre polarizzazione verticale e un nullo allo zenit, quindi su tratte corte con angoli alti
-penalizza il riferimento. Infine capta più rumore locale, e questo pesa su ΔN.
+The configuration cannot be reconstructed (the author does not reply). The IU3QEZA measurements use a resonant vertical: omnidirectional in azimuth in the model, but in an urban garden the radials, ground, nearby buildings and common-mode currents on the feed line make it less omnidirectional than expected. It is also vertically polarized with a null at the zenith, so on short paths with high angles it penalizes the reference. Finally it picks up more local noise, which weighs on ΔN.
 
-**reAPET:** il riferimento è parte della misura; il report lo dichiara, non lo assume neutro.
+**reAPET:** the reference is part of the measurement; the report declares it rather than assuming it neutral.
 
-### 4. SNR di WSJT-X inaffidabile — Confermata (motivazione da verificare)
+### 4. WSJT-X SNR unreliable — Confirmed (reasoning to verify)
 
-La stima del rumore di WSJT-X cresce con l'affollamento della banda, quindi l'SNR di un segnale
-dipende dagli altri segnali presenti. Il motivo dato nel README ("depends even on the window size
-in pixels") non è documentato e probabilmente riguarda la finestra di decodifica in frequenza, non
-i pixel. Irrilevante per reAPET: WSJT-X è escluso come fonte (vedi `STRATEGY.md`).
+The WSJT-X noise estimate rises with band crowding, so a signal's SNR depends on the other signals present. The reason given in the README ("depends even on the window size in pixels") is not documented and probably refers to the decoding window in frequency, not to pixels. Irrelevant for reAPET: WSJT-X is excluded as a source (see `STRATEGY.md`).
 
-### 5. Offset tra catene RX — Confermata, peso minore
+### 5. Offset between receive chains — Confirmed, minor weight
 
-Misurati 3 dB (Kiwi vs TS-940S) e 1 dB (Kiwi vs Perseus). Con catene uguali e una dispersione del
-ΔS di diversi dB, 1–2 dB sono entro il rumore di misura. Lo zero con splitter resta facoltativo,
-ma è anche il test di validazione dello stimatore (bias in funzione di affollamento e livello).
+Measured 3 dB (Kiwi vs TS-940S) and 1 dB (Kiwi vs Perseus). With matched chains and a ΔS spread of several dB, 1–2 dB is within measurement noise. The zero check with a splitter stays optional, but it is also the validation test of the estimator (bias as a function of crowding and level).
 
-## Analisi e presentazione
+## Analysis and presentation
 
-### 6. Simmetria + interpolazione cubica — Smentita come metodo generale
+### 6. Symmetry + cubic interpolation — Refuted as a general method
 
-Ogni punto è duplicato a az+π e conteggiato come indipendente; `regularize_data` riempie i bin
-vuoti con la media dei vicini e `interp1d(..., fill_value='extrapolate')` estrapola. Nel caso
-pubblicato il Sud (Africa, quasi senza spot) è disegnato con dati altrui. La simmetria richiede
-antenna, ambiente e riferimento simmetrici: in HF praticamente mai.
+Every point is duplicated at az+π and counted as independent; `regularize_data` fills empty bins with the mean of their neighbours and `interp1d(..., fill_value='extrapolate')` extrapolates. In the published case the South (Africa, almost no spots) is drawn with other directions' data. Symmetry requires a symmetric antenna, environment and reference: in HF almost never.
 
-**reAPET:** settori senza dati vuoti; simmetria solo come opzione didattica, spenta di default.
+**reAPET:** sectors without data stay empty; symmetry only as a teaching option, off by default.
 
-### 7. Densità di spot letta come lobo — Rischio non trattato
+### 7. Spot density read as a lobe — Untreated risk
 
-Il numero di spot per direzione riflette dove sono gli OM e dove arriva lo skip, non il guadagno.
-I grafici polari 2019 sovrappongono punti e curva senza separare densità e ΔS.
+The number of spots per direction reflects where hams are and where the skip lands, not the gain. The 2019 polar plots overlay points and curve without separating density from ΔS.
 
-**reAPET:** il diagramma mostra solo ΔS; la copertura è un'informazione separata.
+**reAPET:** the pattern shows only ΔS; coverage is separate information.
 
-### 8. "Within 3 dB of the predicted" (Fig. 6) — Da verificare, probabilmente ottimistica
+### 8. "Within 3 dB of the predicted" (Fig. 6) — To verify, probably optimistic
 
-Confronto con la differenza di due modelli MMANA a 4 elevazioni (5–35°) scelte a posteriori, su
-dati raddoppiati dalla simmetria e interpolati, senza incertezza dichiarata. Con 4 curve teoriche
-a disposizione è facile che una cada entro 3 dB. I modelli NEC non vedono il terreno reale, che è
-proprio la motivazione dichiarata del metodo.
+Comparison with the difference of two MMANA models at 4 elevations (5–35°) chosen after the fact, on data doubled by symmetry and interpolated, with no stated uncertainty. With 4 theoretical curves available, one is likely to fall within 3 dB. NEC models do not see the real ground, which is precisely the stated motivation for the method.
 
-### 9. Pesi e mediane — Incoerenza articolo/codice
+### 9. Weights and medians — Article/code mismatch
 
-L'articolo dice mediana per stazione e deviazione standard usata come peso per l'interpolazione.
-Il codice (commit `ca984bc`, "abandon medians use all values") usa tutti i valori, senza pesi.
+The article says median per station, with the standard deviation used as a weight for interpolation. The code (commit `ca984bc`, "abandon medians use all values") uses all values, without weights.
 
-### 10. Scelta della finestra temporale — Gradi di libertà del ricercatore
+### 10. Choice of the time window — Researcher degrees of freedom
 
-"Evitare i periodi con pendenza ripida", scegliendo la finestra a occhio sul grafico. Il risultato
-dipende da una scelta manuale non registrata.
+"Avoid periods with a steep slope", choosing the window by eye on the plot. The result depends on an unrecorded manual choice.
 
-**reAPET:** la finestra si sceglie con un criterio dichiarato, oppure il report mostra
-l'evoluzione nel tempo invece di un unico diagramma.
+**reAPET:** the window is chosen by a declared criterion, or the report shows the evolution over time instead of a single pattern.
 
-## Difetti di codice (rilevanti solo per riuso)
+## Code defects (relevant only for reuse)
 
-- `extract_ft8_data`: `locator` non azzerato quando la riga non contiene un grid. Il call eredita
-  il locator della riga precedente, quindi azimut sbagliato. `out.string` invece di `out.group(0)`.
-- Timestamp in ora locale (`fromtimestamp`, `mktime`) nonostante i commenti "UTC": corretto solo
-  su macchine in UTC (Colab).
-- `extract_info`: `dist_dict` sovrascritto a ogni reporter.
-- `regularize_data`: `np.linspace` con `num` float, che va in errore con numpy ≥ 1.18.
-- `%pylab inline` deprecato; il notebook dipende dal suo namespace globale.
-- `wspr_utils.py` è una copia divergente e non usata della cella 1 del notebook.
-- Fonte WSPR (`wsprnet.org/olddb`, scraping HTML) presumibilmente non più disponibile.
+- `extract_ft8_data`: `locator` is not reset when a line carries no grid. The call inherits the previous line's locator, hence a wrong azimuth. `out.string` instead of `out.group(0)`.
+- Timestamps in local time (`fromtimestamp`, `mktime`) although the comments say "UTC": correct only on machines running in UTC (Colab).
+- `extract_info`: `dist_dict` is overwritten for every reporter.
+- `regularize_data`: `np.linspace` with a float `num`, which fails with numpy ≥ 1.18.
+- `%pylab inline` is deprecated; the notebook depends on its global namespace.
+- `wspr_utils.py` is a diverging, unused copy of the notebook's cell 1.
+- WSPR source (`wsprnet.org/olddb`, HTML scraping) presumably no longer available.
 
-Verificato e **non** problematico: l'accoppiamento degli spot tra i due RX per secondo esatto.
-Con tolleranza ±7 s il numero di coppie non cambia (IU3QEZA: 1498 in entrambi i casi).
+Verified and **not** a problem: pairing spots between the two receivers by exact second. With a ±7 s tolerance the number of pairs does not change (IU3QEZA: 1498 in both cases).
 
-## Da fare per chiudere i punti aperti
+## Open items
 
-1. ~~Leggere il fork weakmon di Cogoni~~: fatto (punto 2).
-2. ~~Configurazione del loop LZ1AQ~~: non ricostruibile, punto superato (punto 3).
-3. ~~Capire l'escursione di 30 dB del rumore nei log IU3QEZA~~: dipende soprattutto dallo
-   stimatore, che include i segnali (vedi punto 2). Il gradino di −12 dB su RX2 dopo le 11:40
-   non è ricostruibile: nessuno ricorda l'intervento. Lezione: il software registra da sé il
-   contesto della sessione (livelli per catena, interruzioni, gradini rilevati).
+1. ~~Read Cogoni's weakmon fork~~: done (item 2).
+2. ~~Configuration of the LZ1AQ loop~~: cannot be reconstructed, item superseded (item 3).
+3. ~~Explain the 30 dB noise swing in the IU3QEZA logs~~: mostly the estimator, which includes signals (see item 2). The −12 dB step on RX2 after 11:40 cannot be reconstructed: nobody remembers the action. Lesson: the software records the session context by itself (per-chain levels, interruptions, detected steps).
