@@ -1,53 +1,49 @@
-# APET: Antenna Pattern Extraction Tool
+# reAPET — APET Reborn
 
-_A small tool to compute antenna radiation patterns with WSPR or FT8_
+Confronto sperimentale di antenne HF in sola ricezione.
 
-A longer presentation of this project may be found at: https://docs.google.com/document/d/1xli5nsfunJtP1ATBcLF-FFQXslA9Ovz93nYWgzLMxd0/edit?usp=sharing
+Un radioamatore che costruisce o modifica un'antenna oggi non ha un modo pratico per sapere, con dati e non a sensazione, se è davvero migliore di un'altra e in quali direzioni. Confrontare in trasmissione è complicato. WSPR offre pochi campioni, RBN non ha una base statistica. Il commutatore A/B confronta istanti diversi e mescola l'antenna con fading, stazioni e QRM che cambiano.
 
-The idea is to use two receivers connected to two PCs (or one decent PC with two soundcards, or SDRs) and to collect statistics on the received stations over a defined time span (it depends on propagation and on the intended measurement purpose). Try to avoid very long sessions because the reflecting layers changes height, so the incoming vertical angles will change, a lot. So, if your recordings are too long, your results will be difficult to read because they're the average over several kinds of propagation type.
+reAPET confronta due antenne **contemporaneamente**: ciascuna è collegata a uno dei due ricevitori dello stesso SDR. Per ogni stazione FT8 ricevuta da entrambe misura:
 
-Data may be collected in two main ways:
-- Automatically collected from the WSPR db:
-http://wsprnet.org/olddb?mode=html&band=all&limit=2000&findcall=&findreporter=is0kyb&sort=date
-- FT8 reports produced via Robert Morris AB1HL weakmon: https://github.com/mcogoni/weakmon
+- **ΔS**, la differenza di livello del segnale, cioè il guadagno relativo nella direzione da cui arriva la stazione;
+- **ΔN**, la differenza di rumore, stimata nelle pause tra un ciclo FT8 e il successivo.
 
-Note: WSJT-X doesn't produce useful results: SNR is computed in a non-consistent way that depends even on the window size in pixels. Modifying WSJT-x source code is really more complicated than it should and I ended up adapting Robert' code, which is, on the opposite, exemplar for clarity (given the difficult task anyway) and he wrote a FT8 decoder for dummies that really can help you understand how these communication protocols work: https://github.com/rtmrtmrtmrtm/basicft8
+Il risultato è una misura datata e legata al suo contesto: un diagramma del guadagno relativo dove ci sono dati, con la copertura e l'affidabilità dichiarate settore per settore, e la sua evoluzione nel tempo. Non è "il diagramma" dell'antenna, che dipende da propagazione, ora e luogo.
 
+## Stato
 
-My forked version implements a different SNR computation allowing much more precise data.
-In this case, you should have two weakmon instances running on the same PC or two different PCs. FT8 decoding is very computationally heavy, so don't use slow computers.
-The advantage of FT8 is that you have so many more signals to acquire from so many different directions and people usually use quite higher power (sic!) than WSPR. So, in general, recording times may be much shorter to reach the same statistics.
+Il progetto è in ripartenza. Il primo componente in sviluppo è un **registratore IQ a doppio ricevitore**, da provare sul campo al CQ WW DX CW del 28 novembre 2026. Il registratore:
 
-The Jupyter Notebook will process the data in steps and the result will be (you can do anything you like here...):
-- Angle / distance distribution of the spots;
-- SNR difference (between the two RXs) plot;
-- Approximate antenna pattern of unknown antenna if you have a omnidirectional antenna as reference;
+- pilota un SDRplay RSPduo in doppio tuner tramite l'API SDRplay ufficiale, su un portatile Windows o macOS;
+- imposta e blocca guadagni uguali sui due tuner, con AGC spento;
+- marca saturazioni, sovraccarichi e interruzioni;
+- salva dati e contesto (antenne, locator, stato dell'orologio) in formato SigMF, rianalizzabili offline.
 
-Of course you should live in a radio quiet area to obtain "scientific" results. In particular, if you have some known local noise coming from a specific direction, the antennas should be in the same spot.
+Decoder, calcolo di ΔS e ΔN e report verranno dopo, costruiti sulle sessioni registrate.
 
-![alt text](https://github.com/mcogoni/APET/blob/master/pattern.png "Antenna pattern example")
+## Documentazione
 
-This example pattern was obtained after about 6 hours and by exploiting the known antenna symmetry, since there are very few stations active from the South (Africa).
+- [`STRATEGY.md`](STRATEGY.md): scopo, posizionamento, confini e metriche del progetto.
+- [`docs/review-2019.md`](docs/review-2019.md): revisione critica del lavoro originale, con le verifiche fatte sui log.
+- [`docs/plans/`](docs/plans/): piani di lavoro. Il piano del registratore è seguito nella issue [#1](https://github.com/iu3qez/reAPET/issues/1).
 
-As told above, try not to mix long and short propagation since it comes from different vertical angles and you would end up obtaining a horizontal pattern assiciated to several vertical angles... this seems unavoidable without special beam-forming antennas.
+## Il lavoro originale
 
-Be careful to initially characterize the two rx chains by feeding them the same antenna (i.e. via a hybrid splitter) and check on the WSPR website their relative SNR values on the same spots: take the average value and put the number in the code parameter "rx_offset".
+reAPET riparte da **APET** (Antenna Pattern Extraction Tool) di Marco Cogoni IS0KYB, scritto nel 2019 ([mcogoni/APET](https://github.com/mcogoni/APET)). L'idea di partenza e la prima implementazione sono sue: due catene di ricezione in parallelo, prima con WSPR e poi con FT8, per ricavare il diagramma azimutale di un'antenna rispetto a un riferimento e confrontarlo con il modello NEC. La bozza dell'articolo scritto per QEX e mai pubblicato è in [`QEX_paper.pdf`](QEX_paper.pdf).
 
-If you're unfamiliar with Jupyter Notebook, you can easily run the code on Google Colab:
-https://colab.research.google.com/github/mcogoni/APET/blob/master/WSPR_Antenna_Pattern.ipynb
-and run the commands in the first cell to clone the Github code in Google Drive.
-To use the notebook in read/write mode, you should save it and it will belong to you.
+Il codice originale è conservato nella radice del repository, così com'era:
 
-Another use of the same data is to plot the SNR difference between the antennas over time
-to directly verify how propagation evolves, which distances are open, etc
-![alt text](https://github.com/mcogoni/APET/blob/master/DeltaSNR_time.png "DeltaSNR over time")
+- `WSPR_Antenna_Pattern.ipynb`: il notebook con tutta l'elaborazione;
+- `coords_utils.py`: conversione Maidenhead e calcolo di distanza e azimut;
+- `decoded_*.txt`: log FT8 di esempio, del 2019 (IS0KYB) e del 2025 (IU3QEZ);
+- `LazyH-16m.csv`, `4cross_quads.csv`: diagrammi esportati da MMANA;
+- `pattern.png`, `DeltaSNR_time.png`: esempi di risultati originali.
 
-As you can see above, from 8:00 UTC to 22:00 UTC, the highest gain of the directional antenna is
-over 10dB in the morning, but it degrades over time, until North Europe vanishes ~2 hours after sunset.
-Then only USA remains and the difference between the antennas grows constantly especially for 9000km paths. 
+Non è stato aggiornato e non gira con le librerie Python attuali. Cosa regge e cosa no di quel lavoro è spiegato nella [review](docs/review-2019.md).
 
-73,
-marco / IS0KYB
+## Licenza
 
-## If you like this software and find it useful you can contribute by sending me a donation to keep me working on it!
-https://www.paypal.me/MarcoCogoni
+GPL v3, come il progetto originale. Vedi [`LICENSE`](LICENSE).
+
+73 de IU3QEZ
