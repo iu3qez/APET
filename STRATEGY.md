@@ -7,56 +7,56 @@ last_updated: 2026-10-09
 
 ## Purpose
 
-L'OM non ha un modo pratico per confrontare sperimentalmente due antenne HF, e il giudizio resta affidato alle sensazioni. Confrontare in TX è complicato, WSPR offre pochi campioni, RBN nessuna base statistica, e il commutatore A/B confronta istanti diversi, mescolando l'antenna con fading, stazioni e QRM che cambiano. Manca una misura contemporanea, in sola ricezione e con base statistica sufficiente.
+Radio amateurs have no practical way to compare two HF antennas experimentally, so judgement is left to impressions. Comparing on transmit is complicated, WSPR gives few samples, RBN has no statistical base, and an A/B switch compares different moments, mixing the antenna with changing fading, stations and QRM. What is missing is a simultaneous, receive-only measurement with a sufficient statistical base.
 
 ## Positioning
 
-Il rigore sta nel software, non nell'operatore: due ricevitori uguali, anche economici, due antenne, e nient'altro da fare. reAPET misura separatamente ΔS (guadagno relativo, spot per spot) e ΔN (rumore, stimato nelle pause tra i cicli FT8), con un decoder proprio e una stima dichiarata e verificabile. Il risultato è una misura datata e contestualizzata, inclusa la sua evoluzione nel tempo, non "il diagramma" dell'antenna.
+The rigour lives in the software, not in the operator: two matched receivers, even cheap ones, two antennas, and nothing else to do. reAPET measures ΔS (relative gain, spot by spot) and ΔN (noise, estimated in the pauses between FT8 cycles) separately, with its own decoder and an estimate that is declared and verifiable. The result is a dated measurement tied to its context, including its evolution over time, not "the pattern" of the antenna.
 
 ## Users
 
-**Primary:** Autocostruttore - ha appena realizzato o modificato un'antenna e usa reAPET per sapere, con dati e non a sensazione, se e in quali direzioni è migliore del suo riferimento, con un risultato che chiunque capisce senza spiegazioni.
+**Primary:** Homebrewer - has just built or modified an antenna and uses reAPET to learn, from data rather than impressions, whether and in which directions it beats their reference, with a result anyone can understand without explanation.
 
 ## Boundaries
 
-- Gli SNR di WSJT-X non sono mai una fonte di misura.
-- Nessun confronto tra misure di OM o luoghi diversi (archivi pubblici, classifiche): ogni misura è relativa al proprio riferimento e contesto.
-- Nessun numero unico come risultato, nessuna densità di spot presentata come lobo, nessun settore interpolato senza dati; la simmetria è solo un'opzione didattica, spenta di default.
-- Nessuna procedura a carico dell'operatore (scambio antenne, tarature obbligatorie); lo zero con splitter resta facoltativo.
-- Non ancora: angolo di arrivo e meccanismo propagativo (fase 2); intanto i dati registrati devono permetterla.
+- WSJT-X SNR is never a measurement source.
+- No comparison between measurements from different hams or places (public archives, rankings): every measurement is relative to its own reference and context.
+- No single number as the result, no spot density presented as a lobe, no sector interpolated without data; symmetry is only a teaching option, off by default.
+- No procedures put on the operator (antenna swaps, mandatory calibration); the zero check with a splitter stays optional.
+- Not yet: angle of arrival and propagation mechanism (phase 2); meanwhile the recorded data must make it possible.
 
-_Resist a change when:_ sposta lavoro o giudizio dal software all'operatore, o fa sembrare il risultato più completo o generale di quanto i dati della sessione permettano.
+_Resist a change when:_ it moves work or judgement from the software to the operator, or makes the result look more complete or more general than the session's data allows.
 
 ## Key metrics
 
-- **Test di zero (splitter)** - bias e dispersione di ΔS e ΔN con la stessa antenna su entrambi i RX, anche in funzione di affollamento in banda e livello del segnale; banco di validazione del progetto.
-- **Coerenza interna** - scarto tra i diagrammi di cicli pari e dispari della stessa sessione; dà la differenza minima rilevabile, calcolata per ogni sessione.
-- **Tempo e attriti al primo risultato** - da "ho due ricevitori" al primo report, misurato con OM esterni al progetto.
-- **Leggibilità** - un terzo, guardando solo il report, risponde correttamente a "quale antenna è migliore, verso dove, quando".
+- **Zero test (splitter)** - bias and spread of ΔS and ΔN with the same antenna on both receivers, including as a function of band crowding and signal level; the project's validation bench.
+- **Internal consistency** - difference between the patterns from even and odd cycles of the same session; gives the minimum detectable difference, computed for every session.
+- **Time and friction to first result** - from "I have two receivers" to the first report, measured with hams outside the project.
+- **Readability** - a third party, looking only at the report, correctly answers "which antenna is better, towards where, when".
 
 ## Tracks
 
-### Motore di misura con validazione
+### Measurement engine with validation
 
-Acquisizione da due catene, decoder FT8, ΔS per spot, ΔN nelle pause, test di zero e coerenza interna; si parte senza un decoder.
+Capture from two chains, FT8 decoder, ΔS per spot, ΔN in the pauses, zero test and internal consistency; it starts with no decoder.
 
-_Why it serves the approach:_ è il punto in cui la misura si vince o si perde: senza una stima SNR difendibile il resto è un grafico sopra una sensazione.
+_Why it serves the approach:_ this is where the measurement is won or lost: without a defensible SNR estimate, everything else is a chart on top of an impression.
 
-### Zero attriti
+### Zero friction
 
-Dall'installazione al primo risultato senza che l'OM debba comportarsi da tecnico di laboratorio.
+From installation to first result without the ham having to act like a lab technician.
 
-_Why it serves the approach:_ l'oggettività dipende dal fatto che l'operatore intervenga il meno possibile.
+_Why it serves the approach:_ objectivity depends on the operator intervening as little as possible.
 
-### Report leggibile
+### Readable report
 
-Diagramma del ΔS solo dove ci sono dati, copertura e affidabilità per settore dichiarate, evoluzione nel tempo.
+ΔS pattern only where data exists, coverage and reliability declared per sector, evolution over time.
 
-_Why it serves the approach:_ il risultato deve essere capito da chiunque senza confondere dove arrivano le stazioni con dove l'antenna guadagna.
+_Why it serves the approach:_ anyone must understand the result without confusing where stations come from with where the antenna has gain.
 
 ## Milestones
 
-- **2026-11-28** - CQ WW DX CW: banco prova sul campo con amici e antenne diverse; FT8 in banda affollata come stress test della stima ΔN, e prima verifica degli attriti con OM esterni.
+- **2026-11-28** - CQ WW DX CW: a field gathering to share the tool and train other hams, with up to one hour of test recording (magnetic loop against a real antenna).
 
 ## Brand
 

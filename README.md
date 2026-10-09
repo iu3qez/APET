@@ -1,49 +1,51 @@
 # reAPET — APET Reborn
 
-Confronto sperimentale di antenne HF in sola ricezione.
+Experimental comparison of HF antennas, receive only.
 
-Un radioamatore che costruisce o modifica un'antenna oggi non ha un modo pratico per sapere, con dati e non a sensazione, se è davvero migliore di un'altra e in quali direzioni. Confrontare in trasmissione è complicato. WSPR offre pochi campioni, RBN non ha una base statistica. Il commutatore A/B confronta istanti diversi e mescola l'antenna con fading, stazioni e QRM che cambiano.
+A radio amateur who builds or modifies an antenna has no practical way today to know, from data rather than impressions, whether it really beats another one and in which directions. Comparing on transmit is complicated. WSPR gives few samples, RBN has no statistical base. An A/B switch compares different moments and mixes the antenna with changing fading, stations and QRM.
 
-reAPET confronta due antenne **contemporaneamente**: ciascuna è collegata a uno dei due ricevitori dello stesso SDR. Per ogni stazione FT8 ricevuta da entrambe misura:
+reAPET compares two antennas **at the same time**: each one is connected to one of the two receivers of the same SDR. For every FT8 station received by both, it measures:
 
-- **ΔS**, la differenza di livello del segnale, cioè il guadagno relativo nella direzione da cui arriva la stazione;
-- **ΔN**, la differenza di rumore, stimata nelle pause tra un ciclo FT8 e il successivo.
+- **ΔS**, the difference in signal level, i.e. the relative gain in the direction the station arrives from;
+- **ΔN**, the difference in noise, estimated in the pauses between one FT8 cycle and the next.
 
-Il risultato è una misura datata e legata al suo contesto: un diagramma del guadagno relativo dove ci sono dati, con la copertura e l'affidabilità dichiarate settore per settore, e la sua evoluzione nel tempo. Non è "il diagramma" dell'antenna, che dipende da propagazione, ora e luogo.
+The result is a dated measurement tied to its context: a relative-gain pattern where data exists, with coverage and reliability declared sector by sector, and its evolution over time. It is not "the pattern" of the antenna, which depends on propagation, time and place.
 
-## Stato
+## Status
 
-Il progetto è in ripartenza. Il primo componente in sviluppo è un **registratore IQ a doppio ricevitore**, da provare sul campo al CQ WW DX CW del 28 novembre 2026. Il registratore:
+The project is restarting. The first component under development is a **dual-receiver IQ recorder**, to be tried in the field at the CQ WW DX CW contest on 28 November 2026. The recorder:
 
-- pilota un SDRplay RSPduo in doppio tuner tramite l'API SDRplay ufficiale, su un portatile Windows o macOS;
-- imposta e blocca guadagni uguali sui due tuner, con AGC spento;
-- marca saturazioni, sovraccarichi e interruzioni;
-- salva dati e contesto (antenne, locator, stato dell'orologio) in formato SigMF, rianalizzabili offline.
+- drives an SDRplay RSPduo in dual-tuner mode through the official SDRplay API, on a Windows or macOS laptop;
+- sets and locks equal gains on both tuners, with AGC off;
+- marks saturation, overload and interruptions;
+- stores data and context (antennas, locator, clock state) as SigMF, reanalysable offline.
 
-Decoder, calcolo di ΔS e ΔN e report verranno dopo, costruiti sulle sessioni registrate.
+The decoder, the ΔS and ΔN computation and the report come later, built on the recorded sessions.
 
-## Documentazione
+## Documentation
 
-- [`STRATEGY.md`](STRATEGY.md): scopo, posizionamento, confini e metriche del progetto.
-- [`docs/review-2019.md`](docs/review-2019.md): revisione critica del lavoro originale, con le verifiche fatte sui log.
-- [`docs/plans/`](docs/plans/): piani di lavoro. Il piano del registratore è seguito nella issue [#1](https://github.com/iu3qez/reAPET/issues/1).
+- [`STRATEGY.md`](STRATEGY.md): purpose, positioning, boundaries and metrics.
+- [`docs/review-2019.md`](docs/review-2019.md): critical review of the original work, with the checks run on the logs.
+- [`docs/plans/`](docs/plans/): work plans. The recorder plan is tracked in issue [#1](https://github.com/iu3qez/reAPET/issues/1).
+- [`docs/solutions/`](docs/solutions/): documented learnings (technical decisions and measurement patterns).
+- [`CONCEPTS.md`](CONCEPTS.md): project vocabulary.
 
-## Il lavoro originale
+## The original work
 
-reAPET riparte da **APET** (Antenna Pattern Extraction Tool) di Marco Cogoni IS0KYB, scritto nel 2019 ([mcogoni/APET](https://github.com/mcogoni/APET)). L'idea di partenza e la prima implementazione sono sue: due catene di ricezione in parallelo, prima con WSPR e poi con FT8, per ricavare il diagramma azimutale di un'antenna rispetto a un riferimento e confrontarlo con il modello NEC. La bozza dell'articolo scritto per QEX e mai pubblicato è in [`QEX_paper.pdf`](QEX_paper.pdf).
+reAPET restarts from **APET** (Antenna Pattern Extraction Tool) by Marco Cogoni IS0KYB, written in 2019 ([mcogoni/APET](https://github.com/mcogoni/APET)). The starting idea and the first implementation are his: two receive chains in parallel, first with WSPR and then with FT8, to derive an antenna's azimuth pattern against a reference and compare it with the NEC model. The draft of the article written for QEX and never published is in [`QEX_paper.pdf`](QEX_paper.pdf).
 
-Il codice originale è conservato nella radice del repository, così com'era:
+The original code is kept as it was, at the repository root:
 
-- `WSPR_Antenna_Pattern.ipynb`: il notebook con tutta l'elaborazione;
-- `coords_utils.py`: conversione Maidenhead e calcolo di distanza e azimut;
-- `decoded_*.txt`: log FT8 di esempio, del 2019 (IS0KYB) e del 2025 (IU3QEZ);
-- `LazyH-16m.csv`, `4cross_quads.csv`: diagrammi esportati da MMANA;
-- `pattern.png`, `DeltaSNR_time.png`: esempi di risultati originali.
+- `WSPR_Antenna_Pattern.ipynb`: the notebook with all the processing;
+- `coords_utils.py`: Maidenhead conversion and distance/azimuth computation;
+- `decoded_*.txt`: example FT8 logs, from 2019 (IS0KYB) and 2025 (IU3QEZ);
+- `LazyH-16m.csv`, `4cross_quads.csv`: patterns exported from MMANA;
+- `pattern.png`, `DeltaSNR_time.png`: examples of the original results.
 
-Non è stato aggiornato e non gira con le librerie Python attuali. Cosa regge e cosa no di quel lavoro è spiegato nella [review](docs/review-2019.md).
+It has not been updated and does not run with current Python libraries. What holds up in that work and what does not is explained in the [review](docs/review-2019.md).
 
-## Licenza
+## License
 
-GPL v3, come il progetto originale. Vedi [`LICENSE`](LICENSE).
+GPL v3, like the original project. See [`LICENSE`](LICENSE).
 
 73 de IU3QEZ
