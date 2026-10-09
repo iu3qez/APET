@@ -42,6 +42,8 @@ Details and rationale are in the plan under `docs/plans/`. In short:
 
 Config is in `.compound-engineering/config.yaml` (everything commented out); the artifact root is `docs/` (plans in `docs/plans/`). The scratch space `.context/compound-engineering/` is in `.gitignore`.
 
+`docs/solutions/` holds documented learnings (technical decisions, measurement patterns), organized by category with YAML frontmatter (`module`, `tags`, `problem_type`); relevant when implementing or debugging in a documented area. Project vocabulary is in `CONCEPTS.md`.
+
 ## How to work
 
 Write every report, summary, or handoff to the user through the `ce-noslop` skill. This applies when you are the top-level agent writing to the user, not when you are a subagent reporting to its caller. Do not apply it to code, config, verbatim quotes, or text the user asked to post as written.
