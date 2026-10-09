@@ -35,6 +35,7 @@ Access the RSPduo in dual-tuner mode through the **SDRplay API v3 directly**, wi
 - Set and read back every parameter on the structure of the matching tuner (`rxChannelA`, `rxChannelB`), never through a single shared pointer.
 - Pair the blocks of the two tuners by `firstSampleNum`. A counter discontinuity on one tuner is a gap of exact length. Drop the other tuner's samples over the same interval and open a new segment on both recordings.
 - Record `PowerOverloadChange` events per tuner, acknowledging them to the API, as a second saturation source next to the clipping visible in the IQ.
+- Unwrap `firstSampleNum`: in the API 3.15 specification it is an `unsigned int` (`sdrplay_api_StreamCbParamsT`), so at 2 MS/s it wraps about every 36 minutes, inside a one-hour session. Whether it counts delivered samples or ADC samples (6 MHz in dual-tuner mode) is not stated; `reapet doctor` measures the step.
 - Install the API with the official SDRplay installer (Windows, macOS ARM and Intel, Linux). Nothing has to be compiled.
 
 ## Why This Matters

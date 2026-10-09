@@ -22,6 +22,8 @@ The project is restarting. The first component under development is a **dual-rec
 
 The decoder, the ΔS and ΔN computation and the report come later, built on the recorded sessions.
 
+The recorder is written and tested against a simulated device; the checks on the real RSPduo are still to do. Installation, commands and the list of hardware checks are in [`docs/install.md`](docs/install.md).
+
 ## Documentation
 
 - [`STRATEGY.md`](STRATEGY.md): purpose, positioning, boundaries and metrics.

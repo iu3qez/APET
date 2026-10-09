@@ -17,7 +17,13 @@ Read before any non-trivial work:
 
 ## State of the code
 
-The repository currently holds only the 2019 code, in `oldAPET/`. The new Python package `reapet` is planned but not written yet.
+The recorder of the active plan is implemented in the Python package `reapet` (`src/reapet/`, tests in `tests/`), tested only against the simulated device; the hardware checks are listed in `docs/install.md`. Run `pytest` and `ruff check src tests` (a virtualenv with `pip install -e ".[dev]"`).
+
+- `device.py`: device interface, capability check (R14), lock and per-tuner readback. `sdrplay.py`: SDRplay API 3.15 binding (`ctypes`), RSPduo dual tuner, 32-bit `firstSampleNum` unwrapped to 64 bits. `fake_device.py`: simulated device with injectable clipping, overload, counter gaps, disconnection.
+- `acquisition.py`: callback ring buffer (`BlockQueue`) and the writer (`Recorder`): pairing by counter, gaps, saturation and overload intervals, disk checks. `dsp.py`: block statistics, hysteresis, polyphase decimator. `session.py`: SigMF Collection, journal, metadata built from the journal, `recover`.
+- `context.py`: antennas, locator, SNTP. `gain.py`: headroom check. `bands.py`: tuner and narrow slice per band. `cli.py`: `doctor`, `record`, `recover`.
+
+Positions in the journal are wide-band counter values; they are mapped to recording sample indices only when the metadata is built.
 
 **Legacy code (`oldAPET/`), do not modify:**
 - `WSPR_Antenna_Pattern.ipynb` is the real code: every function is defined in cell 1, and cell 2 loads the data (`mode = "FT8"` or `"WSPR"`; reporters, locator and time window are hard-coded in the cell).
