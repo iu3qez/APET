@@ -74,11 +74,28 @@ adottata da reAPET, ma:
   sessione.
 - ΔN non è mai riportato: per antenne da ricezione (bande basse) è la metà del risultato.
 
+Contaminazione della pausa da stazioni fuori tempo, misurata dal DT degli spot decodificati
+(`dec.dt`, assunto riferito all'inizio nominale a 0,5 s): percentuale di spot la cui trasmissione
+si sovrappone alla finestra.
+
+| Log | DT p5 / mediana / p95 | 0–0,32 s (Cogoni) | 13,3–15,3 s | 14,0–15,0 s |
+|---|---|---|---|---|
+| IS0KYB1 | −0,01 / +0,59 / +1,32 s | 5% | 96% | 15% |
+| IU3QEZA1 | −0,29 / +0,28 / +0,64 s | 6% | 91% | 6% |
+| IU3QEZA2 | −0,31 / +0,28 / +0,64 s | 6% | 92% | 6% |
+
+La mediana del DT diversa da zero è un offset comune a tutte le stazioni, quindi va attribuita
+all'orologio o alla latenza audio del ricevitore: la pausa reale non è dove la colloca l'orologio
+del PC. I segnali sotto soglia, che il DT non può mostrare, formano in banda affollata un tappeto
+che arriva dalle direzioni dell'antenna: probabile causa principale della correlazione tra
+"rumore" e decodifiche, e ragione per cui ΔN dentro la sottobanda FT8 potrebbe non essere rumore
+ambientale. Da verificare con il test di zero e con una misura in una porzione quieta adiacente.
+
 **reAPET:** ΔS dal rapporto dei livelli di segnale (catene uguali): il metodo di Cogoni è
-corretto e si può tenere. ΔN nelle pause tra cicli FT8, ma con i presidi che mancavano: orologio
-verificato (NTP), finestra al centro della pausa reale (~13,3–15,3 s), più frame con finestratura,
-percentile su tempo × frequenza, scarto dei cicli contaminati, media su più cicli e validazione
-con il test di zero. Entrambi riportati separatamente.
+corretto e si può tenere. ΔN nelle pause tra cicli FT8, con i presidi che mancavano: finestra
+posizionata dai dati (distribuzione DT della sessione, scegliendo la finestra meno contaminata),
+più frame con finestratura, percentile su tempo × frequenza, scarto dei cicli contaminati, media
+su più cicli e validazione con il test di zero. Entrambi riportati separatamente.
 
 ### 3. Riferimento "quasi omnidirezionale" — Non verificabile, superato
 
