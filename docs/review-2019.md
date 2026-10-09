@@ -42,8 +42,21 @@ adottata da reAPET, ma:
   | IU3QEZA1 | 438 | 25,1 | 46,4 | 60,5 | **35,4 dB** |
   | IU3QEZA2 | 426 | 25,3 | 44,1 | 54,6 | **29,3 dB** |
 
-  Escursioni di 30 dB a distanza di decine di secondi non sono rumore esterno: probabile potenza
-  totale con i segnali dentro, AGC o livelli audio. Usato come N, falsa ΔN.
+  Escursioni di 30 dB a distanza di decine di secondi non sono rumore esterno. Analisi della
+  sessione IU3QEZA (2025-01-03, 10:53–13:02 UTC, contesto urbano):
+  - correlazione per blocco tra "rumore" e numero di decodifiche: **+0,44 / +0,49**. La stima
+    cresce con l'attività in banda, quindi **contiene i segnali**;
+  - correlazione del "rumore" tra i due RX: +0,73, coerente con una causa comune (la banda);
+  - nessuna firma di TX locale (rumore alto con decodifiche crollate). Su RX1 ci sono picchi
+    sincroni con i cicli FT8 (:28/:58) con decodifiche normali: forse una stazione FT8 forte
+    e vicina;
+  - dopo una pausa di circa 20 minuti (11:30–11:40) su entrambi i RX, RX2 scende di ~12 dB e RX1
+    no: è un gradino di livello nella catena 2, probabilmente un intervento dell'operatore;
+  - dopo le 12:50 le decodifiche vanno a zero e il "rumore" crolla: fine della sessione.
+
+  Usato come N, falsa ΔN. Il gradino a metà sessione mostra che l'offset tra le catene può
+  cambiare senza che nessuno se ne accorga: il motore di misura deve rilevarlo e spezzare la
+  sessione.
 - ΔN non è mai riportato: per antenne da ricezione (bande basse) è la metà del risultato.
 
 **reAPET:** ΔS dal rapporto dei livelli di segnale (catene uguali), ΔN misurato nelle pause tra
@@ -130,4 +143,6 @@ Con tolleranza ±7 s il numero di coppie non cambia (IU3QEZA: 1498 in entrambi i
 
 1. Leggere il fork weakmon di Cogoni: come sono definiti `snr` e `Background noise` (punto 2).
 2. Configurazione del loop LZ1AQ usato come riferimento (punto 3).
-3. Capire l'escursione di 30 dB del rumore nei log IU3QEZA: AGC, livelli audio, oppure stimatore.
+3. ~~Capire l'escursione di 30 dB del rumore nei log IU3QEZA~~: dipende soprattutto dallo
+   stimatore, che include i segnali (vedi punto 2). Resta da chiarire il gradino di −12 dB su
+   RX2 dopo le 11:40.
