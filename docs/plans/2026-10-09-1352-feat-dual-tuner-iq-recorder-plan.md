@@ -23,7 +23,7 @@ execution: code
 
 ## Product Contract
 
-**Product Contract preservation:** changed: R4, R9, R12 — ridefiniti dopo la ricerca. Acquisizione larga con salvataggio stretto, perché la saturazione si veda su tutta la banda. Overload del dispositivo dove disponibile. Portatile Windows o macOS sul campo invece di Linux più Windows. Le tre modifiche sono state confermate dall'utente.
+**Product Contract preservation:** changed: R4, R9, R12, AE3 — ridefiniti dopo la ricerca. Acquisizione larga con salvataggio stretto, perché la saturazione si veda su tutta la banda. Overload del dispositivo dove disponibile. Portatile Windows o macOS sul campo invece di Linux più Windows. Le tre modifiche ai requisiti sono state confermate dall'utente. AE3 è stato allineato alla chiusura della sessione in caso di disconnessione (vedi Scope Boundaries).
 
 ### Summary
 
@@ -101,7 +101,7 @@ Il CQ WW del 2026-11-28 è un raduno all'aperto con amici che portano antenne: s
 
 - AE1. **Covers R9.** **Given** una registrazione in corso durante il contest, **when** una stazione vicina sulla stessa banda trasmette e satura il ricevitore 1 per 40 s, **then** la sessione contiene quell'intervallo marcato come saturazione sul ricevitore 1, e la registrazione prosegue.
 - AE2. **Covers R7.** **Given** l'avvio di una sessione, **when** l'operatore non inserisce il locator, **then** la registrazione parte e la sessione riporta il locator come mancante.
-- AE3. **Covers R10.** **Given** una registrazione in corso, **when** il collegamento con l'SDR si interrompe per 5 s e poi torna, **then** la sessione dichiara l'interruzione con inizio e fine, senza buchi silenziosi.
+- AE3. **Covers R10.** **Given** una registrazione in corso, **when** il collegamento con l'SDR si interrompe per 5 s, **then** la sessione si chiude dichiarando l'interruzione con il suo inizio, senza buchi silenziosi.
 - AE4. **Covers R6.** **Given** un PC senza internet e con l'orologio non sincronizzato, **when** si avvia la registrazione, **then** la registrazione parte e la sessione registra che l'orologio non era sincronizzato.
 - AE5. **Covers R14.** **Given** un SDR con un solo ricevitore, oppure con due ricevitori senza campionamento simultaneo, **when** si avvia una sessione, **then** reAPET indica quale capacità manca e non registra.
 
@@ -113,10 +113,11 @@ Il CQ WW del 2026-11-28 è un raduno all'aperto con amici che portano antenne: s
 
 - Decoder FT8, calcolo di ΔS e ΔN, rilevamento dei gradini di livello, report: sono nell'area di analisi, che è la prossima.
 - Registrazione simultanea su più bande.
-- Pacchetto installabile e uso autonomo da parte di altri OM: al CQ WW reAPET lo usa l'autore, e gli altri guardano e imparano.
+- Distribuzione del pacchetto e uso autonomo da parte di altri OM: al CQ WW reAPET lo usa l'autore, e gli altri guardano e imparano.
 - Waterfall o visualizzazioni durante la registrazione oltre lo stato minimo di R11.
 - Supporto a due ricevitori separati con clock indipendenti (due QMX, due SDR).
 - Considerato e non costruito: continuare a registrare dopo un overflow marcando l'allineamento tra i canali come "non verificato". Si preferisce riavviare entrambi gli stream (KTD5), perché un confronto tra antenne con allineamento incerto non vale i pochi decimi di secondo risparmiati. Lo si riconsidera se i riavvii risultano frequenti nella prova di durata.
+- Considerato e non costruito: rifiutare l'avvio in base a una stima della dimensione della sessione. La durata non è nota in anticipo, quindi la stima sarebbe arbitraria; lo spazio rimasto a schermo e la chiusura pulita al margine (KTD11) bastano.
 - Considerato e non costruito: ritentare automaticamente la connessione dopo una disconnessione. La sessione si chiude con l'interruzione dichiarata e l'operatore ne avvia un'altra; al CQ WW c'è sempre qualcuno davanti al portatile. Lo si riconsidera per registrazioni lunghe senza presidio.
 
 #### Deferred to Follow-Up Work
@@ -156,12 +157,12 @@ Questo piano copre la registrazione, prima area del motore di misura. La suddivi
 - KTD3. **Formato nativo del dispositivo senza conversioni.** Per l'RSPduo è CS16 (fondo scala 32767), salvato come `ci16_le`. La scala va nei metadati. Governs R13.
 - KTD4. **Marche temporali per blocco in una tabella a parte, non un segmento SigMF per blocco.** Per ogni blocco la tabella riporta indice del campione, ora del PC in ns, picco in dBFS, RMS in dBFS, campioni al fondo scala e flag di stato. Il driver SoapySDRPlay3 non fornisce marche hardware, quindi l'ora viene dal PC. Governs R5, R9.
 - KTD5. **Un overflow o un timeout su uno dei due canali fa fermare e riavviare entrambi gli stream.** Si apre un nuovo segmento, con la perdita stimata dall'ora del PC e marcata come stimata, più un'annotazione. Il driver svuota il buffer senza dire quanti campioni ha perso, e i due stream lo farebbero in modo indipendente: riavviarli insieme è l'unico modo per mantenere l'allineamento verificato. Governs R1, R10.
-- KTD6. **Acquisizione a ~2 MS/s e decimazione software verso ~62,5 kS/s.** Il tuner viene centrato in modo che la fetta FT8 non cada sullo spurio in continua; la fetta si estrae con conversione numerica e filtro FIR polifase, il cui stato viene mantenuto da un blocco all'altro. Il controllo della saturazione avviene sul blocco largo prima della decimazione. Con l'opzione "salva largo" si scrive anche lo stream largo. I valori esatti (frequenza di campionamento, larghezza, offset) si fissano in U4 sulla base di ciò che il driver offre in doppio tuner. Governs R4, R9.
+- KTD6. **Acquisizione a ~2 MS/s e decimazione software verso ~62,5 kS/s.** Il tuner viene centrato in modo che la fetta FT8 non cada sullo spurio in continua. La fetta stretta si posiziona in modo da contenere la sottobanda FT8 e una porzione adiacente senza sottobande di modi digitali, e la posizione per ogni banda è documentata. La fetta si estrae con conversione numerica e filtro FIR polifase, il cui stato viene mantenuto da un blocco all'altro. Il controllo della saturazione avviene sul blocco largo prima della decimazione. Con l'opzione "salva largo" si scrive anche lo stream largo. I valori esatti (frequenza di campionamento, larghezza, offset) si fissano in U4 sulla base di ciò che il driver offre in doppio tuner. Governs R4, R9.
 - KTD7. **Saturazione: conteggio dei campioni con |I| o |Q| ≥ 98% del fondo scala, intervalli con isteresi.** Un intervallo si apre al primo blocco saturo e si chiude dopo 1 s di blocchi puliti. Un'annotazione per intervallo e per canale. Se il driver espone un segnale di overload (sensore o impostazione leggibile) viene registrato come seconda fonte; altrimenti la sessione dichiara "overload del dispositivo non disponibile". Governs R9.
 - KTD8. **Lettura e scrittura separate.** C'è un thread di lettura per stream, che usa buffer preallocati e calcola solo le statistiche del blocco. Un thread di scrittura gestisce disco, decimazione e giornale; l'interfaccia sta nel thread principale. La coda deve assorbire alcuni secondi di rallentamento del disco. Se si riempie, l'evento conta come overflow software e segue KTD5, invece di bloccare il lettore: il buffer del driver regge solo ~260 ms a 2 MS/s. Governs R1, R10.
 - KTD9. **Scrittura sicura in caso di crash.** I dati grezzi vanno su `.sigmf-data` a campioni interi. Gli eventi vanno in un giornale append-only (JSON Lines) con flush e fsync periodico. I metadati finali si compongono alla chiusura e si scrivono in modo atomico. `reapet recover` tronca i dati a campioni interi e ricostruisce i metadati dal giornale. Governs R10, R13.
 - KTD10. **Orologio: interrogazione SNTP fatta dal programma** all'avvio, ogni 5 minuti e alla chiusura, con scarto, tempo di andata e ritorno e server. Funziona uguale su Windows e macOS senza privilegi. Lo stato del sistema operativo si aggiunge quando è leggibile; senza rete si registra "sconosciuto", mai "ok". Governs R6.
-- KTD11. **Disco:** all'avvio si stima la dimensione della sessione e non si parte se non ci sta. Durante la registrazione lo spazio si controlla ogni pochi secondi, e la registrazione si chiude in modo pulito sotto un margine (il maggiore fra 1 GB e 2 minuti di dati). Un errore di disco pieno in scrittura chiude la sessione con l'interruzione dichiarata. Governs R10, R11.
+- KTD11. **Disco:** durante la registrazione lo spazio si controlla ogni pochi secondi, e la registrazione si chiude in modo pulito sotto un margine (il maggiore fra 1 GB e 2 minuti di dati). Un errore di disco pieno in scrittura chiude la sessione con l'interruzione dichiarata. Governs R10, R11.
 - KTD12. **Controllo del margine e proposta del guadagno.** Si fa una breve acquisizione di prova a guadagni decrescenti, uguali sui due canali, e si sceglie il guadagno più alto che lascia un margine di picco prefissato su entrambi. Il valore poi si blocca e si rilegge. Le soglie si tarano in U6 con l'RSPduo reale. Governs R3.
 - KTD13. **Un dispositivo simulato con la stessa interfaccia del livello SoapySDR** è la base di tutti i test automatici: produce rumore più toni, clipping a comando, overflow, timeout e disconnessioni. SoapySDR non offre una sorgente nulla utilizzabile ovunque.
 
@@ -250,11 +251,10 @@ docs/install.md
   1. Configurare il progetto con `src/` e le dipendenze (numpy, scipy, sigmf, SoapySDR esterno non installabile via pip), più pytest.
   2. Il comando `doctor` elenca la versione di SoapySDR, i moduli caricati con eventuali errori, i dispositivi trovati, e per ciascuno i canali, le frequenze di campionamento, i guadagni e il formato nativo.
   3. Documentare in `docs/install.md` la procedura che funziona su Windows e su macOS (compilazione di SoapySDRPlay3 contro la stessa libreria SoapySDR usata da Python) e gli argomenti del dispositivo per il doppio tuner.
-- **Execution note:** è soprattutto installazione: la prova vera è il comando `doctor` eseguito con l'RSPduo collegato, prima su macOS e poi su Windows, con un breve stream di entrambi i canali alimentati dallo stesso segnale (per esempio un generatore o una stazione forte attraverso uno splitter) per controllare l'allineamento all'avvio. Annotare in `docs/install.md` quale portatile funziona.
+- **Execution note:** è soprattutto installazione: la prova vera è il comando `doctor` eseguito con l'RSPduo collegato sul primo portatile, macOS. Windows si prova solo se macOS fallisce, o se avanza tempo dopo U7. La prova si fa con un breve stream di entrambi i canali alimentati dallo stesso segnale (per esempio un generatore o una stazione forte attraverso uno splitter) per controllare l'allineamento all'avvio. Annotare in `docs/install.md` quale portatile funziona.
 - **Test scenarios:**
   - `doctor` senza dispositivi stampa la versione di SoapySDR e "nessun dispositivo", ed esce senza errori.
   - `doctor` con un modulo che non si carica riporta il nome del modulo e l'errore.
-  - `doctor` con il dispositivo simulato elenca due canali, le frequenze di campionamento e il formato nativo.
 - **Verification:** `doctor` gira con l'RSPduo su almeno un portatile, e `docs/install.md` descrive i passi riproducibili e l'esito dell'allineamento.
 
 ### U2. Livello dispositivo, dispositivo simulato e controllo delle capacità
@@ -267,10 +267,12 @@ docs/install.md
   1. Il controllo delle capacità verifica: due canali RX, ricezione simultanea, AGC disattivabile, guadagno manuale. Per l'RSPduo il doppio tuner si seleziona con gli argomenti del dispositivo documentati in U1.
   2. Le due catene devono essere equivalenti: sull'RSPduo si usa su entrambi i tuner lo stesso tipo di ingresso (50 Ω, non l'ingresso Hi-Z che esiste solo sul tuner 1), con le stesse impostazioni di filtri e notch. Le scelte vengono rilette e salvate.
   3. Il blocco imposta frequenza, campionamento, larghezza di banda, AGC spento e guadagni uguali per elemento, poi rilegge tutto e conserva i valori riletti. Dopo il blocco ogni modifica è rifiutata (R2).
-  4. Gli stream si aprono uno per canale quando il driver non accetta stream multicanale, altrimenti un solo stream con due canali.
+  4. Gli stream si aprono nella sola forma che il driver accetta in doppio tuner, registrata in `docs/install.md` da U1; non si implementa la forma alternativa.
   5. Il dispositivo simulato espone gli stessi metodi e permette di iniettare clipping, overflow, timeout e disconnessione.
 - **Test scenarios:**
   - Covers AE5. Un dispositivo simulato con un solo canale viene rifiutato, e il messaggio nomina la capacità mancante.
+  - Covers AE5. Un dispositivo simulato con due ricevitori che non campionano simultaneamente viene rifiutato, e il messaggio nomina la ricezione simultanea.
+  - `doctor` con il dispositivo simulato elenca due canali, le frequenze di campionamento e il formato nativo.
   - Un dispositivo simulato senza guadagno manuale viene rifiutato con il motivo.
   - Un dispositivo idoneo, dopo il blocco, rilegge guadagni uguali sui due canali e AGC spento, e i valori riletti finiscono nel contesto.
   - Un tentativo di cambiare il guadagno dopo il blocco viene rifiutato.
@@ -307,7 +309,7 @@ docs/install.md
   1. I lettori consegnano alla coda blocchi a buffer riciclati, con l'ora del PC e le statistiche già calcolate.
   2. Lo scrittore aggiorna gli intervalli di saturazione per canale, decima verso la fetta stretta e passa dati ed eventi a `session.py`.
   3. Su overflow, timeout o coda piena scatta KTD5: si fermano entrambi gli stream, si registra la perdita stimata, si riavvia e si apre un nuovo segmento.
-  4. Timeout ripetuti oltre una soglia, oppure errori di stream, valgono come disconnessione: la sessione si chiude con l'interruzione dichiarata.
+  4. Timeout consecutivi per almeno 3 s, oppure errori di stream, valgono come disconnessione: la sessione si chiude con l'interruzione dichiarata.
   5. Il metodo di rilevamento della saturazione disponibile (solo IQ, oppure IQ più overload) si registra nel contesto.
 - **Test scenarios:**
   - Covers AE1. 40 s di clipping iniettato sul canale A producono un'annotazione di saturazione su A di circa 40 s e nessuna su B.
@@ -315,7 +317,7 @@ docs/install.md
   - La decimazione di un tono a +1,5 kHz dalla frequenza FT8 lo restituisce alla frequenza attesa nella fetta stretta. Un tono fuori fetta viene attenuato almeno quanto previsto dal filtro.
   - La decimazione su blocchi consecutivi dà lo stesso risultato della decimazione dell'intero segnale in un colpo solo, senza discontinuità ai bordi.
   - Un overflow sul solo canale B fa riavviare entrambi gli stream, e le due registrazioni hanno lo stesso numero di campioni e lo stesso nuovo segmento.
-  - Covers AE3. Una disconnessione simulata di 5 s chiude la sessione con un'annotazione di interruzione che riporta inizio e fine.
+  - Covers AE3. Una disconnessione simulata di 5 s chiude la sessione con un'annotazione di interruzione che ne riporta l'inizio.
   - Uno scrittore rallentato artificialmente che riempie la coda produce un overflow software trattato come in KTD5, senza bloccare il lettore.
 - **Verification:** i test passano; con l'RSPduo, 10 minuti senza overflow a ~2 MS/s per canale.
 
@@ -365,7 +367,6 @@ docs/install.md
   4. In `docs/install.md` si aggiunge una lista di controllo per il campo: alimentazione, cavi, protezione dell'ingresso, comandi.
 - **Test scenarios:**
   - Covers F1. Una registrazione end-to-end di 30 s con il dispositivo simulato produce una sessione valida e uno stato che riporta tempo e saturazioni.
-  - Con spazio su disco simulato sotto la stima iniziale, `record` non parte e lo dice.
   - Con lo spazio che scende sotto il margine durante la registrazione, la sessione si chiude in modo pulito con un'annotazione "disco al limite".
   - Un errore di disco pieno in scrittura chiude la sessione con l'interruzione dichiarata, e `recover` non è necessario.
   - Ctrl-C produce una sessione chiusa e valida.
@@ -379,7 +380,7 @@ docs/install.md
 |---|---|---|
 | Test automatici | `pytest` | dopo ogni unità |
 | Lint | `ruff check` | dopo ogni unità |
-| Installazione e capacità | `reapet doctor` con l'RSPduo, su macOS e su Windows | U1, U2 |
+| Installazione e capacità | `reapet doctor` con l'RSPduo sul primo portatile che passa (macOS, poi Windows se serve) | U1, U2 |
 | Allineamento all'avvio | stesso segnale su entrambi i canali tramite splitter, confronto del primo fronte | U1 |
 | Validità SigMF | rilettura con la libreria `sigmf` e apertura in un lettore esterno | U3, U7 |
 | Recupero | interruzione forzata del processo a metà registrazione, poi `reapet recover` | U3, U7 |
