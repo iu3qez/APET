@@ -144,5 +144,6 @@ Con tolleranza ±7 s il numero di coppie non cambia (IU3QEZA: 1498 in entrambi i
 1. Leggere il fork weakmon di Cogoni: come sono definiti `snr` e `Background noise` (punto 2).
 2. Configurazione del loop LZ1AQ usato come riferimento (punto 3).
 3. ~~Capire l'escursione di 30 dB del rumore nei log IU3QEZA~~: dipende soprattutto dallo
-   stimatore, che include i segnali (vedi punto 2). Resta da chiarire il gradino di −12 dB su
-   RX2 dopo le 11:40.
+   stimatore, che include i segnali (vedi punto 2). Il gradino di −12 dB su RX2 dopo le 11:40
+   non è ricostruibile: nessuno ricorda l'intervento. Lezione: il software registra da sé il
+   contesto della sessione (livelli per catena, interruzioni, gradini rilevati).
