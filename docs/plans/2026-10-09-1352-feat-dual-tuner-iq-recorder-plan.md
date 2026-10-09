@@ -142,4 +142,3 @@ Questo piano copre la registrazione, prima area del motore di misura. La suddivi
 
 - `STRATEGY.md`: confini, metriche, traguardo del CQ WW.
 - `docs/review-2019.md`: punto 2, il gradino di −12 dB su RX2, la posizione della finestra del rumore e la distribuzione dei DT.
-- Fork weakmon `iu3qez/weakmon`, `ft8.py` (`find_background`, `snr_is0kyb`): il precedente salvava solo l'output del decoder.
