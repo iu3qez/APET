@@ -265,14 +265,16 @@ docs/install.md
 - **Files:** `src/reapet/device.py`, `src/reapet/fake_device.py`, `tests/test_device.py`.
 - **Approach:**
   1. Il controllo delle capacità verifica: due canali RX, ricezione simultanea, AGC disattivabile, guadagno manuale. Per l'RSPduo il doppio tuner si seleziona con gli argomenti del dispositivo documentati in U1.
-  2. Il blocco imposta frequenza, campionamento, larghezza di banda, AGC spento e guadagni uguali per elemento, poi rilegge tutto e conserva i valori riletti. Dopo il blocco ogni modifica è rifiutata (R2).
-  3. Gli stream si aprono uno per canale quando il driver non accetta stream multicanale, altrimenti un solo stream con due canali.
-  4. Il dispositivo simulato espone gli stessi metodi e permette di iniettare clipping, overflow, timeout e disconnessione.
+  2. Le due catene devono essere equivalenti: sull'RSPduo si usa su entrambi i tuner lo stesso tipo di ingresso (50 Ω, non l'ingresso Hi-Z che esiste solo sul tuner 1), con le stesse impostazioni di filtri e notch. Le scelte vengono rilette e salvate.
+  3. Il blocco imposta frequenza, campionamento, larghezza di banda, AGC spento e guadagni uguali per elemento, poi rilegge tutto e conserva i valori riletti. Dopo il blocco ogni modifica è rifiutata (R2).
+  4. Gli stream si aprono uno per canale quando il driver non accetta stream multicanale, altrimenti un solo stream con due canali.
+  5. Il dispositivo simulato espone gli stessi metodi e permette di iniettare clipping, overflow, timeout e disconnessione.
 - **Test scenarios:**
   - Covers AE5. Un dispositivo simulato con un solo canale viene rifiutato, e il messaggio nomina la capacità mancante.
   - Un dispositivo simulato senza guadagno manuale viene rifiutato con il motivo.
   - Un dispositivo idoneo, dopo il blocco, rilegge guadagni uguali sui due canali e AGC spento, e i valori riletti finiscono nel contesto.
   - Un tentativo di cambiare il guadagno dopo il blocco viene rifiutato.
+  - Un dispositivo simulato con ingressi diversi sui due canali viene configurato con lo stesso tipo di ingresso su entrambi, e la scelta risulta nel contesto.
   - Se il valore riletto differisce da quello richiesto, conta il valore riletto e la differenza viene segnalata.
 - **Verification:** i test passano con il dispositivo simulato; con l'RSPduo, `doctor` riporta "idoneo" in doppio tuner.
 
