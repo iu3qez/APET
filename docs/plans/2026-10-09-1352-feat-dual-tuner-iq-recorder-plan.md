@@ -13,17 +13,17 @@ execution: code
 ## Goal Capsule
 
 - **Objective:** al CQ WW DX CW del 2026-11-28 un OM registra un'ora di dati IQ da due antenne che si possono rianalizzare offline in modo affidabile, senza dover regolare nulla sul ricevitore.
-- **Means:** un registratore reAPET in Python che pilota tramite SoapySDR un RSPduo in doppio tuner, collegato a un portatile Windows o macOS (KTD1, KTD3).
+- **Means:** un registratore reAPET in Python che pilota un RSPduo in doppio tuner tramite l'API SDRplay ufficiale, collegato a un portatile Windows o macOS (KTD1, KTD14).
 - **Product authority:** `STRATEGY.md` (track "Motore di misura con validazione") e il Product Contract qui sotto. L'analisi (decoder, ΔS, ΔN, rilevamento dei gradini di livello) non è in scope attivo.
 - **Execution profile:** si parte da U1. La prova d'installazione con l'hardware reale decide su quale portatile proseguire. Le unità successive si possono sviluppare con il dispositivo simulato, mentre le verifiche finali richiedono l'RSPduo.
-- **Stop conditions:** fermarsi e chiedere se U1 fallisce sia su Windows sia su macOS (vedi Risks), se il doppio tuner via SoapySDR non consegna i due canali allineati all'avvio, oppure se un requisito richiede di cambiare il comportamento di prodotto.
+- **Stop conditions:** fermarsi e chiedere se U1 fallisce sia su Windows sia su macOS (vedi Risks), se in doppio tuner il contatore dei campioni dei due tuner non permette di allinearli, oppure se un requisito richiede di cambiare il comportamento di prodotto.
 - **Open blockers:** nessuno.
 
 ---
 
 ## Product Contract
 
-**Product Contract preservation:** changed: R4, R9, R12, AE3 — ridefiniti dopo la ricerca. Acquisizione larga con salvataggio stretto, perché la saturazione si veda su tutta la banda. Overload del dispositivo dove disponibile. Portatile Windows o macOS sul campo invece di Linux più Windows. Le tre modifiche ai requisiti sono state confermate dall'utente. AE3 è stato allineato alla chiusura della sessione in caso di disconnessione (vedi Scope Boundaries).
+**Product Contract preservation:** changed: R1, R4, R9, R12, AE3 — ridefiniti dopo la ricerca. Acquisizione larga con salvataggio stretto, perché la saturazione si veda su tutta la banda. Overload del dispositivo dove disponibile. Portatile Windows o macOS sul campo invece di Linux più Windows. R1 non lega più l'accesso a SoapySDR: l'RSPduo usa l'API SDRplay diretta, perché il driver SoapySDRPlay3 non controlla il tuner B, non permette di allineare i canali e scarta l'overload. Le modifiche ai requisiti sono state confermate dall'utente. AE3 è stato allineato alla chiusura della sessione in caso di disconnessione (vedi Scope Boundaries).
 
 ### Summary
 
@@ -45,7 +45,8 @@ Il CQ WW del 2026-11-28 è un raduno all'aperto con amici che portano antenne: s
 - **Registrazione prima dell'analisi.** L'IQ grezzo permette di rifare l'analisi sugli stessi dati cambiando decoder o stimatore, e solo la registrazione è vincolata alla data del 2026-11-28. (session-settled: user-approved — chosen over analisi per prima o decodifica in tempo reale: senza dati grezzi una sessione non è rianalizzabile.) Governs R1, R13.
 - **IQ con marche temporali, non audio.** (session-settled: user-directed — chosen over registrazione audio: richiesta esplicita di IQ e marche temporali.) Governs R1, R5.
 - **SDR con due ricevitori sullo stesso clock.** Elimina lo sfasamento tra due interfacce indipendenti, che in 48 h a 50 ppm arriva a circa 8 s. (session-settled: user-directed — chosen over due QMX, due SDR separati o hardware misto.) Governs R1.
-- **Accesso all'hardware tramite SoapySDR.** Un'unica interfaccia per molti SDR, con AGC e guadagno controllabili. È universale nell'interfaccia ma non nelle capacità: per questo serve il controllo all'avvio. (session-settled: user-directed — chosen over il supporto di un singolo apparato o protocollo, come openHPSDR.) Governs R1, R12, R14.
+- **Un'interfaccia dispositivo di reAPET con più backend; SoapySDR resta la strada per gli apparati diversi dall'RSPduo.** L'interfaccia è universale, le capacità no: per questo serve il controllo all'avvio. (session-settled: user-directed — chosen over il supporto di un singolo apparato o protocollo, come openHPSDR.) Governs R1, R14.
+- **RSPduo tramite l'API SDRplay diretta, per il momento.** Il driver SoapySDRPlay3 (commit 2026-09-04) in doppio tuner ignora l'indice del canale per guadagno, AGC e frequenza (`Settings.cpp:2179`), non riallinea i canali al riavvio, scarta `firstSampleNum` e l'evento di overload (`Streaming.cpp:173`). L'API diretta li offre tutti e si installa con l'installer ufficiale per Windows e macOS. (session-settled: user-directed — chosen over correggere una copia di SoapySDRPlay3: fork C++ da mantenere e compilare.) Governs R1, R2, R9, R12.
 - **Sul campo l'RSPduo alimentato dal portatile.** Orion MkII e TRX DUO richiedono alimentazione seria e cavo ethernet, quindi restano per l'uso in stazione e non sono provati in questo piano. L'RSPdx è escluso perché ha un solo tuner. (session-settled: user-directed — chosen over Orion MkII e TRX DUO sul campo: impraticabili su un prato.) Governs R12, R14.
 - **Registratore reAPET che pilota l'SDR.** Guadagno e AGC non sono lasciati all'operatore, coerentemente con il confine "nessuna procedura a carico dell'operatore" di `STRATEGY.md`. (session-settled: user-approved — chosen over programma SDR esistente più diario reAPET: avrebbe lasciato guadagno e AGC all'operatore.) Governs R2, R3, R9.
 - **Acquisizione larga, salvataggio stretto di default.** Si acquisisce tutta la banda così la saturazione si vede, e si salva solo la fetta utile, così la sessione resta archiviabile. Il salvataggio largo resta un'opzione. (session-settled: user-approved — chosen over acquisire e salvare largo, 58 GB/h, o acquisire stretto, che non vede la saturazione da segnali fuori fetta.) Governs R4, R9.
@@ -59,7 +60,7 @@ Il CQ WW del 2026-11-28 è un raduno all'aperto con amici che portano antenne: s
 
 **Acquisizione**
 
-- R1. reAPET registra contemporaneamente l'IQ di due ricevitori dello stesso SDR, accessibile tramite SoapySDR, sullo stesso clock di campionamento.
+- R1. reAPET registra contemporaneamente l'IQ di due ricevitori dello stesso SDR, sullo stesso clock di campionamento, con i due canali allineati campione per campione.
 - R2. Durante una sessione i due ricevitori hanno guadagno uguale, AGC spento e impostazioni bloccate, e nessuna regolazione è possibile fino alla chiusura della sessione.
 - R3. Prima di registrare, reAPET esegue un breve controllo del margine e propone il guadagno da usare. All'operatore non viene chiesta nessuna regolazione.
 - R4. reAPET acquisisce la banda larga offerta dal dispositivo e di default salva solo la sottobanda FT8 della banda scelta più una porzione quieta adiacente; come opzione salva anche la banda larga.
@@ -116,15 +117,13 @@ Il CQ WW del 2026-11-28 è un raduno all'aperto con amici che portano antenne: s
 - Distribuzione del pacchetto e uso autonomo da parte di altri OM: al CQ WW reAPET lo usa l'autore, e gli altri guardano e imparano.
 - Waterfall o visualizzazioni durante la registrazione oltre lo stato minimo di R11.
 - Supporto a due ricevitori separati con clock indipendenti (due QMX, due SDR).
-- Considerato e non costruito: continuare a registrare dopo un overflow marcando l'allineamento tra i canali come "non verificato". Si preferisce riavviare entrambi gli stream (KTD5), perché un confronto tra antenne con allineamento incerto non vale i pochi decimi di secondo risparmiati. Lo si riconsidera se i riavvii risultano frequenti nella prova di durata.
 - Considerato e non costruito: rifiutare l'avvio in base a una stima della dimensione della sessione. La durata non è nota in anticipo, quindi la stima sarebbe arbitraria; lo spazio rimasto a schermo e la chiusura pulita al margine (KTD11) bastano.
 - Considerato e non costruito: ritentare automaticamente la connessione dopo una disconnessione. La sessione si chiude con l'interruzione dichiarata e l'operatore ne avvia un'altra; al CQ WW c'è sempre qualcuno davanti al portatile. Lo si riconsidera per registrazioni lunghe senza presidio.
 
 #### Deferred to Follow-Up Work
 
 - Esportazione in WAV a 12 kHz per slot FT8, per decodificare con strumenti esistenti.
-- Patch al driver SoapySDRPlay3 per esporre l'evento di overload dell'RSPduo, oppure un backend sull'API SDRplay diretta.
-- Prove su Orion MkII e TRX DUO tramite un driver SoapySDR per openHPSDR.
+- Backend SoapySDR dietro la stessa interfaccia dispositivo, con prove su Orion MkII e TRX DUO tramite un driver per openHPSDR.
 
 <!-- ce-section: work-relationships -->
 ### How This Work Fits Together
@@ -138,13 +137,14 @@ Questo piano copre la registrazione, prima area del motore di misura. La suddivi
 
 ### Dependencies / Assumptions
 
-- SoapySDR (0.8.1) e il modulo SoapySDRPlay3 devono essere installabili su almeno uno dei due portatili. Non esistono pacchetti aggiornati per il modulo SDRplay: va compilato contro la stessa libreria SoapySDR caricata da Python. L'API SDRplay v3 esiste per Windows e per macOS, ARM compreso.
+- L'API SDRplay v3 deve essere installata con l'installer ufficiale (Windows, macOS ARM e Intel, Linux), che include il servizio dell'API. reAPET la usa direttamente: non serve SoapySDR sul portatile da campo.
 - La protezione fisica dell'ingresso dell'SDR dalle trasmissioni vicine (limitatore, distanza tra le antenne) è un prerequisito di installazione a carico dell'utente, non una funzione del registratore.
 
 ### Sources / Research
 
 - `STRATEGY.md`: confini, metriche, traguardo del CQ WW.
 - `docs/review-2019.md`: punto 2, il gradino di −12 dB su RX2, la posizione della finestra del rumore e la distribuzione dei DT.
+- SoapySDRPlay3 (github.com/pothosware/SoapySDRPlay3, commit 48bd8b4 del 2026-09-04): `Settings.cpp:2179` (puntatore unico ai parametri del canale), `Streaming.cpp` `activateStream`/`deactivateStream` e gestione di `PowerOverloadChange`.
 
 ---
 
@@ -152,19 +152,20 @@ Questo piano copre la registrazione, prima area del motore di misura. La suddivi
 
 ### Key Technical Decisions
 
-- KTD1. **Python 3.12 o 3.13, pacchetto `reapet` con riga di comando.** Il notebook storico resta dov'è e non viene toccato. Tre comandi: `doctor` (installazione e capacità del dispositivo), `record`, `recover`. La versione esatta di Python è quella per cui SoapySDR è disponibile sul portatile scelto in U1.
-- KTD2. **Sessione in formato SigMF: una Collection con una registrazione per antenna.** La specifica raccomanda le Collection per l'IQ multicanale, e l'estensione `antenna` descrive un'antenna per registrazione. Gli array `captures` sono identici nelle due registrazioni, con un nuovo segmento solo all'avvio e dopo ogni interruzione (`core:datetime`, `core:global_index`). Saturazioni e interruzioni sono annotazioni. Il contesto reAPET (locator, stato dell'orologio, impostazioni rilette, dispositivo, metodo di rilevamento della saturazione) va nel namespace `reapet:`. Il locator va anche in `core:geolocation` come centro approssimato del quadrato. Governs R5, R8, R10, R13.
-- KTD3. **Formato nativo del dispositivo senza conversioni.** Per l'RSPduo è CS16 (fondo scala 32767), salvato come `ci16_le`. La scala va nei metadati. Governs R13.
-- KTD4. **Marche temporali per blocco in una tabella a parte, non un segmento SigMF per blocco.** Per ogni blocco la tabella riporta indice del campione, ora del PC in ns, picco in dBFS, RMS in dBFS, campioni al fondo scala e flag di stato. Il driver SoapySDRPlay3 non fornisce marche hardware, quindi l'ora viene dal PC. Governs R5, R9.
-- KTD5. **Un overflow o un timeout su uno dei due canali fa fermare e riavviare entrambi gli stream.** Si apre un nuovo segmento, con la perdita stimata dall'ora del PC e marcata come stimata, più un'annotazione. Il driver svuota il buffer senza dire quanti campioni ha perso, e i due stream lo farebbero in modo indipendente: riavviarli insieme è l'unico modo per mantenere l'allineamento verificato. Governs R1, R10.
-- KTD6. **Acquisizione a ~2 MS/s e decimazione software verso ~62,5 kS/s.** Il tuner viene centrato in modo che la fetta FT8 non cada sullo spurio in continua. La fetta stretta si posiziona in modo da contenere la sottobanda FT8 e una porzione adiacente senza sottobande di modi digitali, e la posizione per ogni banda è documentata. La fetta si estrae con conversione numerica e filtro FIR polifase, il cui stato viene mantenuto da un blocco all'altro. Il controllo della saturazione avviene sul blocco largo prima della decimazione. Con l'opzione "salva largo" si scrive anche lo stream largo. I valori esatti (frequenza di campionamento, larghezza, offset) si fissano in U4 sulla base di ciò che il driver offre in doppio tuner. Governs R4, R9.
-- KTD7. **Saturazione: conteggio dei campioni con |I| o |Q| ≥ 98% del fondo scala, intervalli con isteresi.** Un intervallo si apre al primo blocco saturo e si chiude dopo 1 s di blocchi puliti. Un'annotazione per intervallo e per canale. Se il driver espone un segnale di overload (sensore o impostazione leggibile) viene registrato come seconda fonte; altrimenti la sessione dichiara "overload del dispositivo non disponibile". Governs R9.
-- KTD8. **Lettura e scrittura separate.** C'è un thread di lettura per stream, che usa buffer preallocati e calcola solo le statistiche del blocco. Un thread di scrittura gestisce disco, decimazione e giornale; l'interfaccia sta nel thread principale. La coda deve assorbire alcuni secondi di rallentamento del disco. Se si riempie, l'evento conta come overflow software e segue KTD5, invece di bloccare il lettore: il buffer del driver regge solo ~260 ms a 2 MS/s. Governs R1, R10.
+- KTD1. **Python 3.12 o 3.13, pacchetto `reapet` con riga di comando.** Il notebook storico resta dov'è e non viene toccato. Tre comandi: `doctor` (installazione e capacità del dispositivo), `record`, `recover`.
+- KTD2. **Sessione in formato SigMF: una Collection con una registrazione per antenna.** La specifica raccomanda le Collection per l'IQ multicanale, e l'estensione `antenna` descrive un'antenna per registrazione. Gli array `captures` sono identici nelle due registrazioni, con un nuovo segmento solo all'avvio e dopo ogni buco (`core:datetime`, `core:global_index`). Saturazioni, overload e interruzioni sono annotazioni. Il contesto reAPET (locator, stato dell'orologio, impostazioni rilette per tuner, versione dell'API, metodo di rilevamento della saturazione) va nel namespace `reapet:`. Il locator va anche in `core:geolocation` come centro approssimato del quadrato. Governs R5, R8, R10, R13.
+- KTD3. **Formato nativo del dispositivo senza conversioni.** L'API SDRplay consegna I e Q come interi a 16 bit in array separati: vengono interlacciati e salvati come `ci16_le`, con la scala nei metadati. Governs R13.
+- KTD4. **Marche temporali per blocco in una tabella a parte, non un segmento SigMF per blocco.** Per ogni blocco la tabella riporta il contatore `firstSampleNum` dell'API, l'ora del PC in ns, picco e RMS in dBFS, campioni al fondo scala e flag di stato. Governs R5, R9.
+- KTD5. **Allineamento e buchi dal contatore dei campioni.** I blocchi dei due tuner si accoppiano per `firstSampleNum`. Una discontinuità del contatore su un tuner, o un blocco scartato per coda piena, è un buco di lunghezza esatta: si scartano i campioni dell'altro tuner nello stesso intervallo e si apre su entrambe le registrazioni un nuovo segmento con lo stesso `core:global_index`. Così le due registrazioni restano allineate campione per campione senza fermare lo stream. Governs R1, R10.
+- KTD6. **Acquisizione a ~2 MS/s e decimazione software verso ~62,5 kS/s.** Il tuner viene centrato in modo che la fetta FT8 non cada sullo spurio in continua. La fetta stretta si posiziona in modo da contenere la sottobanda FT8 e una porzione adiacente senza sottobande di modi digitali, e la posizione per ogni banda è documentata. La fetta si estrae con conversione numerica e filtro FIR polifase, il cui stato viene mantenuto da un blocco all'altro. Il controllo della saturazione avviene sul blocco largo prima della decimazione. Con l'opzione "salva largo" si scrive anche lo stream largo. I valori esatti si fissano in U4 sulla base delle modalità del doppio tuner. Governs R4, R9.
+- KTD7. **Saturazione da due fonti.** Dall'IQ si contano i campioni con |I| o |Q| ≥ 98% del fondo scala, formando intervalli con isteresi: un intervallo si apre al primo blocco saturo e si chiude dopo 1 s di blocchi puliti. Dall'API arrivano gli eventi `PowerOverloadChange` per tuner, che vanno confermati con l'apposito aggiornamento e diventano intervalli di overload. Le due fonti sono annotazioni distinte, così l'analisi distingue clipping nella banda acquisita da sovraccarico dello stadio d'ingresso. Governs R9.
+- KTD8. **La callback dell'API fa solo il minimo.** Copia I e Q in un buffer preallocato, annota contatore e ora del PC e accoda; non fa calcoli. Uno scrittore separato si occupa di statistiche, saturazione, decimazione, disco e giornale; l'interfaccia sta nel thread principale. La coda deve assorbire alcuni secondi di rallentamento del disco. Se si riempie, il blocco viene scartato e conta come buco (KTD5), senza mai bloccare la callback. Governs R1, R10.
 - KTD9. **Scrittura sicura in caso di crash.** I dati grezzi vanno su `.sigmf-data` a campioni interi. Gli eventi vanno in un giornale append-only (JSON Lines) con flush e fsync periodico. I metadati finali si compongono alla chiusura e si scrivono in modo atomico. `reapet recover` tronca i dati a campioni interi e ricostruisce i metadati dal giornale. Governs R10, R13.
 - KTD10. **Orologio: interrogazione SNTP fatta dal programma** all'avvio, ogni 5 minuti e alla chiusura, con scarto, tempo di andata e ritorno e server. Funziona uguale su Windows e macOS senza privilegi. Lo stato del sistema operativo si aggiunge quando è leggibile; senza rete si registra "sconosciuto", mai "ok". Governs R6.
 - KTD11. **Disco:** durante la registrazione lo spazio si controlla ogni pochi secondi, e la registrazione si chiude in modo pulito sotto un margine (il maggiore fra 1 GB e 2 minuti di dati). Un errore di disco pieno in scrittura chiude la sessione con l'interruzione dichiarata. Governs R10, R11.
-- KTD12. **Controllo del margine e proposta del guadagno.** Si fa una breve acquisizione di prova a guadagni decrescenti, uguali sui due canali, e si sceglie il guadagno più alto che lascia un margine di picco prefissato su entrambi. Il valore poi si blocca e si rilegge. Le soglie si tarano in U6 con l'RSPduo reale. Governs R3.
-- KTD13. **Un dispositivo simulato con la stessa interfaccia del livello SoapySDR** è la base di tutti i test automatici: produce rumore più toni, clipping a comando, overflow, timeout e disconnessioni. SoapySDR non offre una sorgente nulla utilizzabile ovunque.
+- KTD12. **Controllo del margine e proposta del guadagno.** Si fa una breve acquisizione di prova a riduzioni di guadagno crescenti, uguali sui due tuner, e si sceglie il guadagno più alto che lascia un margine di picco prefissato su entrambi e non provoca eventi di overload. Il valore poi si blocca e si rilegge per ciascun tuner. Le soglie si tarano in U6 con l'RSPduo reale. Governs R3.
+- KTD13. **Un dispositivo simulato con la stessa interfaccia del backend** è la base di tutti i test automatici: produce rumore più toni con contatore dei campioni, clipping, eventi di overload, buchi del contatore e disconnessioni a comando.
+- KTD14. **Binding all'API SDRplay con `ctypes`, senza compilazione.** Si caricano la libreria dell'API installata e le strutture necessarie: selezione del dispositivo in doppio tuner, parametri per tuner A e B, callback di stream e di eventi. In doppio tuner ogni parametro si imposta sulla struttura del tuner corrispondente e si rilegge da lì. Se le callback in Python non reggono 2 MS/s per due canali, il ripiego è un piccolo modulo C che accumula blocchi e li consegna a Python; si decide in U1 sulla base della misura. Governs R1, R2, R9, R12.
 
 ### High-Level Technical Design
 
@@ -172,17 +173,20 @@ Flusso dei dati durante la registrazione:
 
 ```mermaid
 flowchart TB
-  D[RSPduo in doppio tuner via SoapySDR] -->|stream canale A| RA[Lettore A]
-  D -->|stream canale B| RB[Lettore B]
-  RA -->|blocco largo + statistiche| Q[Coda]
-  RB -->|blocco largo + statistiche| Q
-  Q --> W[Scrittore]
-  W --> S[Saturazione: intervalli con isteresi]
+  D[RSPduo in doppio tuner via API SDRplay] -->|callback tuner A: I, Q, firstSampleNum| CA[Copia in buffer + ora PC]
+  D -->|callback tuner B: I, Q, firstSampleNum| CB[Copia in buffer + ora PC]
+  D -->|evento PowerOverloadChange| OV[Overload per tuner]
+  CA --> Q[Coda]
+  CB --> Q
+  OV --> Q
+  Q --> W[Scrittore: accoppia A e B per contatore]
+  W --> S[Saturazione da IQ: intervalli con isteresi]
   W --> X[Decimazione verso la fetta stretta]
   X --> F[".sigmf-data A e B (stretti)"]
   W -->|opzione salva largo| FW[".sigmf-data A e B (larghi)"]
   W --> J[Giornale eventi + tabella blocchi]
   S --> J
+  OV --> J
   J -->|alla chiusura o con recover| M[".sigmf-meta + .sigmf-collection"]
   W --> U[Stato minimo: registrazione, saturazioni, disco]
 ```
@@ -195,12 +199,10 @@ stateDiagram-v2
   Verifica --> Rifiutata: capacità mancante (R14)
   Verifica --> Contesto: dispositivo idoneo
   Contesto --> Margine: nomi e locator (anche mancanti)
-  Margine --> Bloccata: guadagno scelto, impostazioni rilette
-  Bloccata --> Registrazione: avvio stream insieme
-  Registrazione --> Riavvio: overflow o timeout su un canale (KTD5)
-  Riavvio --> Registrazione: stream riavviati, nuovo segmento
+  Margine --> Bloccata: guadagno scelto, impostazioni rilette per tuner
+  Bloccata --> Registrazione: avvio stream in doppio tuner
+  Registrazione --> Registrazione: buco del contatore, nuovo segmento su entrambi (KTD5)
   Registrazione --> Chiusura: stop, disco al limite, disconnessione, errore disco
-  Riavvio --> Chiusura: riavvio fallito
   Chiusura --> [*]: metadati finali scritti
   Rifiutata --> [*]
 ```
@@ -212,9 +214,10 @@ pyproject.toml
 src/reapet/
   __init__.py
   cli.py              # comandi doctor, record, recover
-  device.py           # livello SoapySDR, controllo capacità, blocco impostazioni
+  device.py           # interfaccia dispositivo e controllo delle capacità
+  sdrplay.py          # backend sull'API SDRplay (ctypes)
   fake_device.py      # dispositivo simulato (KTD13)
-  acquisition.py      # lettori, coda, scrittore, politica di riavvio
+  acquisition.py      # coda, scrittore, accoppiamento per contatore, buchi
   dsp.py              # decimazione, statistiche dei blocchi, saturazione
   session.py          # SigMF collection, giornale, chiusura, recover
   context.py          # nomi, locator, SNTP, stato dell'orologio
@@ -225,60 +228,62 @@ docs/install.md
 
 ### Assumptions
 
-- In doppio tuner il driver SoapySDRPlay3 avvia i due canali in modo che il primo campione di ciascuno corrisponda allo stesso istante. Si verifica in U1 con un segnale comune su entrambi gli ingressi. Se non è vero, scatta la stop condition del Goal Capsule.
-- A ~2 MS/s per due canali, Python con numpy e scipy regge decimazione e scrittura su un portatile recente. Si verifica nella prova di durata di U7.
+- In doppio tuner l'API SDRplay consegna nelle callback dei tuner A e B valori di `firstSampleNum` che coincidono per lo stesso istante. Si verifica in U1 con un segnale comune su entrambi gli ingressi. Se non è vero, scatta la stop condition del Goal Capsule.
+- A ~2 MS/s per due canali, Python con numpy e scipy regge callback, decimazione e scrittura su un portatile recente. Si misura in U1 e si conferma nella prova di durata di U7.
 
 ### Risks
 
 | Rischio | Effetto | Mitigazione |
 |---|---|---|
-| SoapySDRPlay3 non si compila o non si carica né su Windows né su macOS | Nessun registratore al CQ WW | U1 come prima unità; ripiego sull'API SDRplay diretta (backend alternativo dietro la stessa interfaccia di `device.py`), da decidere con l'utente |
-| Overflow frequenti a 2 MS/s sul portatile | Molti riavvii, ore spezzettate | Coda profonda (KTD8), prova di durata in U7; se necessario si scende a 1 MS/s |
-| Saturazione da trasmissioni su altre bande | Non visibile nell'IQ | Dichiarata nella sessione (R9, KTD7); patch del driver rinviata |
+| Le callback in Python non reggono 2 MS/s per due canali | Buchi frequenti, ore spezzettate | Misura in U1; ripiego sul modulo C (KTD14) oppure si scende a 1 MS/s |
+| Strutture dell'API cambiate tra versioni | Il binding `ctypes` legge campi sbagliati | Si fissa la versione dell'API supportata, `doctor` la verifica e rifiuta le altre |
+| Saturazione da trasmissioni su altre bande | Clipping non visibile nell'IQ | Eventi di overload dall'API (KTD7) |
 | Tempo: 7 settimane alla data | Registratore incompleto al CQ WW | Ordine delle unità che porta presto a una registrazione minima end-to-end (U2 → U3 → U4) |
 
 ---
 
 ## Implementation Units
 
-### U1. Scheletro del progetto e prova d'installazione
+### U1. Scheletro del progetto e prova sull'hardware
 
-- **Goal:** pacchetto Python installabile con il comando `reapet doctor`, e la verifica, sull'hardware reale, che almeno un portatile carichi SoapySDR con il modulo SDRplay e veda l'RSPduo in doppio tuner.
-- **Requirements:** R12, R14 (parte diagnostica); KTD1.
+- **Goal:** pacchetto Python con il comando `reapet doctor`, e la verifica, sull'hardware reale, che il binding all'API SDRplay apra l'RSPduo in doppio tuner, regga la velocità di trasferimento e dia contatori allineati.
+- **Requirements:** R1, R12, R14 (parte diagnostica); KTD1, KTD14.
 - **Dependencies:** nessuna.
-- **Files:** `pyproject.toml`, `src/reapet/__init__.py`, `src/reapet/cli.py`, `docs/install.md`, `tests/test_cli_doctor.py`.
+- **Files:** `pyproject.toml`, `src/reapet/__init__.py`, `src/reapet/cli.py`, `src/reapet/sdrplay.py`, `docs/install.md`, `tests/test_cli_doctor.py`.
 - **Approach:**
-  1. Configurare il progetto con `src/` e le dipendenze (numpy, scipy, sigmf, SoapySDR esterno non installabile via pip), più pytest.
-  2. Il comando `doctor` elenca la versione di SoapySDR, i moduli caricati con eventuali errori, i dispositivi trovati, e per ciascuno i canali, le frequenze di campionamento, i guadagni e il formato nativo.
-  3. Documentare in `docs/install.md` la procedura che funziona su Windows e su macOS (compilazione di SoapySDRPlay3 contro la stessa libreria SoapySDR usata da Python) e gli argomenti del dispositivo per il doppio tuner.
-- **Execution note:** è soprattutto installazione: la prova vera è il comando `doctor` eseguito con l'RSPduo collegato sul primo portatile, macOS. Windows si prova solo se macOS fallisce, o se avanza tempo dopo U7. La prova si fa con un breve stream di entrambi i canali alimentati dallo stesso segnale (per esempio un generatore o una stazione forte attraverso uno splitter) per controllare l'allineamento all'avvio. Annotare in `docs/install.md` quale portatile funziona.
+  1. Configurare il progetto con `src/` e le dipendenze (numpy, scipy, sigmf), più pytest e ruff.
+  2. Primo nucleo del binding: caricare la libreria dell'API, leggerne la versione, elencare i dispositivi, selezionare l'RSPduo in doppio tuner, avviare lo stream e ricevere le callback.
+  3. Il comando `doctor` riporta versione dell'API, dispositivi trovati, modalità disponibili, frequenze di campionamento e risultato di una breve ricezione su entrambi i tuner.
+  4. Documentare in `docs/install.md` l'installazione dell'API e l'esito delle prove.
+- **Execution note:** la prova vera è sull'hardware, sul primo portatile (macOS); Windows si prova solo se macOS fallisce, o se avanza tempo dopo U7. Tre misure: `firstSampleNum` di A e B coincidono con lo stesso segnale su entrambi gli ingressi tramite splitter; 10 minuti a ~2 MS/s per tuner senza buchi del contatore con callback in Python; la decisione su KTD14 (Python o modulo C) annotata in `docs/install.md`.
 - **Test scenarios:**
-  - `doctor` senza dispositivi stampa la versione di SoapySDR e "nessun dispositivo", ed esce senza errori.
-  - `doctor` con un modulo che non si carica riporta il nome del modulo e l'errore.
-- **Verification:** `doctor` gira con l'RSPduo su almeno un portatile, e `docs/install.md` descrive i passi riproducibili e l'esito dell'allineamento.
+  - `doctor` senza API installata dice che l'API manca e come installarla, ed esce senza errori.
+  - `doctor` con una versione dell'API non supportata la segnala e non prosegue.
+  - `doctor` senza dispositivi collegati riporta la versione dell'API e "nessun dispositivo".
+- **Verification:** `doctor` gira con l'RSPduo su almeno un portatile, e `docs/install.md` riporta le tre misure.
 
-### U2. Livello dispositivo, dispositivo simulato e controllo delle capacità
+### U2. Interfaccia dispositivo, backend SDRplay, dispositivo simulato e controllo delle capacità
 
-- **Goal:** un'interfaccia unica per aprire il dispositivo, verificarne le capacità, impostare e bloccare i parametri, rileggerli e aprire i due stream, con un'implementazione SoapySDR e una simulata.
-- **Requirements:** R1, R2, R14; KTD3, KTD13. Covers AE5.
+- **Goal:** un'interfaccia unica per aprire il dispositivo, verificarne le capacità, impostare e bloccare i parametri per tuner, rileggerli e avviare lo stream, con il backend SDRplay e uno simulato.
+- **Requirements:** R1, R2, R14; KTD3, KTD13, KTD14. Covers AE5.
 - **Dependencies:** U1.
-- **Files:** `src/reapet/device.py`, `src/reapet/fake_device.py`, `tests/test_device.py`.
+- **Files:** `src/reapet/device.py`, `src/reapet/sdrplay.py`, `src/reapet/fake_device.py`, `tests/test_device.py`.
 - **Approach:**
-  1. Il controllo delle capacità verifica: due canali RX, ricezione simultanea, AGC disattivabile, guadagno manuale. Per l'RSPduo il doppio tuner si seleziona con gli argomenti del dispositivo documentati in U1.
-  2. Le due catene devono essere equivalenti: sull'RSPduo si usa su entrambi i tuner lo stesso tipo di ingresso (50 Ω, non l'ingresso Hi-Z che esiste solo sul tuner 1), con le stesse impostazioni di filtri e notch. Le scelte vengono rilette e salvate.
-  3. Il blocco imposta frequenza, campionamento, larghezza di banda, AGC spento e guadagni uguali per elemento, poi rilegge tutto e conserva i valori riletti. Dopo il blocco ogni modifica è rifiutata (R2).
-  4. Gli stream si aprono nella sola forma che il driver accetta in doppio tuner, registrata in `docs/install.md` da U1; non si implementa la forma alternativa.
-  5. Il dispositivo simulato espone gli stessi metodi e permette di iniettare clipping, overflow, timeout e disconnessione.
+  1. Il controllo delle capacità verifica: due ricevitori, ricezione simultanea sullo stesso clock con contatore dei campioni, AGC disattivabile, guadagno manuale.
+  2. Le due catene devono essere equivalenti: sull'RSPduo si usa su entrambi i tuner lo stesso tipo di ingresso (50 Ω, non l'ingresso Hi-Z che esiste solo sul tuner 1), con le stesse impostazioni di filtri e notch.
+  3. Il blocco imposta frequenza, campionamento, larghezza di banda, AGC spento e riduzioni di guadagno uguali sulle strutture del tuner A e del tuner B, poi le rilegge da ciascuna e conserva i valori riletti. Dopo il blocco ogni modifica è rifiutata (R2).
+  4. Gli eventi di overload vengono confermati all'API e inoltrati alla coda come eventi per tuner.
+  5. Il dispositivo simulato espone la stessa interfaccia e permette di iniettare clipping, overload, buchi del contatore e disconnessione.
 - **Test scenarios:**
-  - Covers AE5. Un dispositivo simulato con un solo canale viene rifiutato, e il messaggio nomina la capacità mancante.
+  - Covers AE5. Un dispositivo simulato con un solo ricevitore viene rifiutato, e il messaggio nomina la capacità mancante.
   - Covers AE5. Un dispositivo simulato con due ricevitori che non campionano simultaneamente viene rifiutato, e il messaggio nomina la ricezione simultanea.
-  - `doctor` con il dispositivo simulato elenca due canali, le frequenze di campionamento e il formato nativo.
   - Un dispositivo simulato senza guadagno manuale viene rifiutato con il motivo.
-  - Un dispositivo idoneo, dopo il blocco, rilegge guadagni uguali sui due canali e AGC spento, e i valori riletti finiscono nel contesto.
+  - Un dispositivo idoneo, dopo il blocco, rilegge da ciascun tuner riduzioni di guadagno uguali e AGC spento, e i valori riletti finiscono nel contesto.
+  - Se il tuner B rilegge un valore diverso dal tuner A, la differenza viene segnalata e la registrazione non parte.
   - Un tentativo di cambiare il guadagno dopo il blocco viene rifiutato.
   - Un dispositivo simulato con ingressi diversi sui due canali viene configurato con lo stesso tipo di ingresso su entrambi, e la scelta risulta nel contesto.
-  - Se il valore riletto differisce da quello richiesto, conta il valore riletto e la differenza viene segnalata.
-- **Verification:** i test passano con il dispositivo simulato; con l'RSPduo, `doctor` riporta "idoneo" in doppio tuner.
+  - `doctor` con il dispositivo simulato elenca due ricevitori, le frequenze di campionamento e il formato nativo.
+- **Verification:** i test passano con il dispositivo simulato. Con l'RSPduo, lo stesso segnale su entrambi i tuner tramite splitter, al variare della riduzione di guadagno, dà livelli di B che seguono A entro una tolleranza annotata, con AGC spento su entrambi.
 
 ### U3. Sessione SigMF, giornale e recupero
 
@@ -295,31 +300,31 @@ docs/install.md
   - Una sessione chiusa normalmente si rilegge con la libreria `sigmf`, le due registrazioni sono valide, hanno lo stesso numero di campioni e gli stessi segmenti.
   - Le annotazioni risultano ordinate per campione iniziale e portano le chiavi `reapet:`.
   - Un file dati troncato a metà campione, dopo `recover`, è valido e contiene un'annotazione di chiusura anomala.
-  - Covers AE3. Un'interruzione registrata nel giornale produce un nuovo segmento con `core:global_index` e la perdita marcata come stimata.
+  - Un buco registrato nel giornale produce su entrambe le registrazioni un nuovo segmento con lo stesso `core:global_index`.
   - Il locator mancante viene salvato come mancante e non come stringa vuota.
 - **Verification:** una sessione simulata di qualche minuto si apre in un lettore SigMF esterno (per esempio IQEngine o inspectrum) e si ricostruisce dopo un'interruzione forzata del processo.
 
 ### U4. Acquisizione, decimazione e saturazione
 
-- **Goal:** la pipeline che legge i due canali, controlla la saturazione sulla banda larga, decima verso la fetta stretta e gestisce overflow, timeout e disconnessioni.
+- **Goal:** la pipeline che riceve i due tuner, li accoppia per contatore, controlla la saturazione sulla banda larga, decima verso la fetta stretta e gestisce buchi e disconnessioni.
 - **Requirements:** R1, R4, R5, R9, R10; KTD4, KTD5, KTD6, KTD7, KTD8. Covers AE1, AE3.
 - **Dependencies:** U2, U3.
 - **Files:** `src/reapet/acquisition.py`, `src/reapet/dsp.py`, `tests/test_dsp.py`, `tests/test_acquisition.py`.
 - **Approach:**
-  1. I lettori consegnano alla coda blocchi a buffer riciclati, con l'ora del PC e le statistiche già calcolate.
-  2. Lo scrittore aggiorna gli intervalli di saturazione per canale, decima verso la fetta stretta e passa dati ed eventi a `session.py`.
-  3. Su overflow, timeout o coda piena scatta KTD5: si fermano entrambi gli stream, si registra la perdita stimata, si riavvia e si apre un nuovo segmento.
-  4. Timeout consecutivi per almeno 3 s, oppure errori di stream, valgono come disconnessione: la sessione si chiude con l'interruzione dichiarata.
-  5. Il metodo di rilevamento della saturazione disponibile (solo IQ, oppure IQ più overload) si registra nel contesto.
+  1. Le callback accodano blocchi a buffer riciclati con contatore e ora del PC (KTD8).
+  2. Lo scrittore accoppia i blocchi di A e B per contatore, applica KTD5 ai buchi, aggiorna gli intervalli di saturazione e di overload per tuner, decima verso la fetta stretta e passa dati ed eventi a `session.py`.
+  3. L'assenza di callback per almeno 3 s, oppure un evento di dispositivo rimosso dall'API, vale come disconnessione: la sessione si chiude con l'interruzione dichiarata.
 - **Test scenarios:**
-  - Covers AE1. 40 s di clipping iniettato sul canale A producono un'annotazione di saturazione su A di circa 40 s e nessuna su B.
+  - Covers AE1. 40 s di clipping iniettato sul tuner A producono un'annotazione di saturazione su A di circa 40 s e nessuna su B.
+  - Un evento di overload su B seguito da quello di fine produce un'annotazione di overload su B con inizio e fine.
   - Due burst di clipping separati da meno di 1 s formano un solo intervallo; separati da più di 1 s, due.
   - La decimazione di un tono a +1,5 kHz dalla frequenza FT8 lo restituisce alla frequenza attesa nella fetta stretta. Un tono fuori fetta viene attenuato almeno quanto previsto dal filtro.
   - La decimazione su blocchi consecutivi dà lo stesso risultato della decimazione dell'intero segnale in un colpo solo, senza discontinuità ai bordi.
-  - Un overflow sul solo canale B fa riavviare entrambi gli stream, e le due registrazioni hanno lo stesso numero di campioni e lo stesso nuovo segmento.
+  - Un buco del contatore sul solo tuner B produce su entrambe le registrazioni lo stesso nuovo segmento, e le due registrazioni hanno lo stesso numero di campioni.
+  - Blocchi di A e B che arrivano in ordine diverso vengono comunque accoppiati per contatore.
   - Covers AE3. Una disconnessione simulata di 5 s chiude la sessione con un'annotazione di interruzione che ne riporta l'inizio.
-  - Uno scrittore rallentato artificialmente che riempie la coda produce un overflow software trattato come in KTD5, senza bloccare il lettore.
-- **Verification:** i test passano; con l'RSPduo, 10 minuti senza overflow a ~2 MS/s per canale.
+  - Uno scrittore rallentato artificialmente che riempie la coda produce un blocco scartato trattato come buco (KTD5), senza bloccare la callback.
+- **Verification:** i test passano; con l'RSPduo, 10 minuti a ~2 MS/s per tuner con il numero di buchi annotato. Un segnale forte nella stessa banda, iniettato tramite attenuatore su un tuner, apre un intervallo di saturazione o di overload; la soglia di KTD7 si tara sul picco misurato all'inizio del sovraccarico.
 
 ### U5. Contesto: antenne, locator e orologio
 
@@ -346,7 +351,7 @@ docs/install.md
 - **Dependencies:** U2, U4.
 - **Files:** `src/reapet/gain.py`, `tests/test_gain.py`.
 - **Approach:**
-  1. Brevi acquisizioni a guadagni decrescenti, uguali sui due canali, misurando il picco sulla banda larga.
+  1. Brevi acquisizioni a riduzioni di guadagno crescenti, uguali sui due tuner, misurando il picco sulla banda larga e gli eventi di overload.
   2. Si sceglie il guadagno più alto che lascia il margine prefissato su entrambi i canali; si mostra il valore proposto e lo si applica con il blocco di U2.
 - **Test scenarios:**
   - Con un dispositivo simulato il cui picco supera il margine sopra un certo guadagno, viene scelto il gradino immediatamente inferiore.
@@ -362,7 +367,7 @@ docs/install.md
 - **Files:** `src/reapet/cli.py`, `tests/test_record_e2e.py`, `docs/install.md`.
 - **Approach:**
   1. `record` esegue verifica, domande, controllo del margine, blocco, registrazione e chiusura; Ctrl-C chiude in modo pulito.
-  2. Lo stato si aggiorna circa una volta al secondo: tempo registrato, intervalli di saturazione per canale, riavvii, spazio su disco rimasto.
+  2. Lo stato si aggiorna circa una volta al secondo: tempo registrato, intervalli di saturazione e di overload per tuner, buchi, spazio su disco rimasto.
   3. I controlli sul disco seguono KTD11.
   4. In `docs/install.md` si aggiunge una lista di controllo per il campo: alimentazione, cavi, protezione dell'ingresso, comandi.
 - **Test scenarios:**
@@ -370,7 +375,7 @@ docs/install.md
   - Con lo spazio che scende sotto il margine durante la registrazione, la sessione si chiude in modo pulito con un'annotazione "disco al limite".
   - Un errore di disco pieno in scrittura chiude la sessione con l'interruzione dichiarata, e `recover` non è necessario.
   - Ctrl-C produce una sessione chiusa e valida.
-- **Verification:** prova di durata di un'ora con l'RSPduo sul portatile scelto, con due antenne o uno splitter; la sessione è valida, le interruzioni (se ce ne sono) sono dichiarate, ed è annotato il numero di riavvii.
+- **Verification:** prova di durata di un'ora con l'RSPduo sul portatile scelto, con due antenne o uno splitter; la sessione è valida, le interruzioni (se ce ne sono) sono dichiarate, ed è annotato il numero di buchi.
 
 ---
 
@@ -381,9 +386,10 @@ docs/install.md
 | Test automatici | `pytest` | dopo ogni unità |
 | Lint | `ruff check` | dopo ogni unità |
 | Installazione e capacità | `reapet doctor` con l'RSPduo sul primo portatile che passa (macOS, poi Windows se serve) | U1, U2 |
-| Allineamento all'avvio | stesso segnale su entrambi i canali tramite splitter, confronto del primo fronte | U1 |
+| Allineamento | stesso segnale su entrambi i tuner tramite splitter; `firstSampleNum` coincidenti e livelli di B che seguono A | U1, U2 |
 | Validità SigMF | rilettura con la libreria `sigmf` e apertura in un lettore esterno | U3, U7 |
 | Recupero | interruzione forzata del processo a metà registrazione, poi `reapet recover` | U3, U7 |
+| Saturazione e overload | segnale forte nella stessa banda su un tuner tramite attenuatore | U4 |
 | Durata | un'ora di registrazione reale a ~2 MS/s per canale | U7 |
 
 ---
