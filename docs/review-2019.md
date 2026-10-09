@@ -94,8 +94,10 @@ ambientale. Da verificare con il test di zero e con una misura in una porzione q
 **reAPET:** ΔS dal rapporto dei livelli di segnale (catene uguali): il metodo di Cogoni è
 corretto e si può tenere. ΔN nelle pause tra cicli FT8, con i presidi che mancavano: finestra
 posizionata dai dati (distribuzione DT della sessione, scegliendo la finestra meno contaminata),
-più frame con finestratura, percentile su tempo × frequenza, scarto dei cicli contaminati, media
-su più cicli e validazione con il test di zero. Entrambi riportati separatamente.
+più frame con finestratura, percentile su tempo × frequenza, media su più cicli e validazione
+con il test di zero. Il ciclo senza una finestra sufficientemente pulita non produce ΔN; se i
+cicli invalidati sono troppi, il report dichiara "ΔN non misurabile in questa sessione" invece di
+dare un numero. ΔS e ΔN sono riportati separatamente.
 
 ### 3. Riferimento "quasi omnidirezionale" — Non verificabile, superato
 
